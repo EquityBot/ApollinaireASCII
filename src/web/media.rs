@@ -187,7 +187,7 @@ fn set_disabled(id: &str, disabled: bool) -> Result<()> {
 }
 /// Enables the media controls for the editor's current state.
 pub(super) fn controls(app: &App) -> Result<()> {
-    let busy = app.loading || app.camera.is_some();
+    let busy = app.loading || app.camera.is_some() || app.recovery.locked;
     let ready = app
         .camera
         .as_ref()

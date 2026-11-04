@@ -4,6 +4,7 @@ use crate::{
 };
 use js_sys::{Array, Uint8Array};
 use std::cell::RefCell;
+use std::ops::Range;
 use wasm_bindgen::{JsCast, prelude::*};
 use wasm_bindgen_futures::{JsFuture, spawn_local};
 use web_sys::{
@@ -13,6 +14,7 @@ use web_sys::{
 
 mod draw;
 mod media;
+mod recovery;
 #[cfg(test)]
 mod tests;
 
@@ -20,6 +22,7 @@ thread_local! {static APP:RefCell<Option<App>>=const {RefCell::new(None)};}
 struct App {
     project: Animation,
     selected: usize,
+    frame_range: Range<usize>,
     playing: bool,
     elapsed: f64,
     last: f64,
@@ -28,10 +31,16 @@ struct App {
     loading: bool,
     ticket: u32,
     font: Option<String>,
-    undo: Vec<Animation>,
-    redo: Vec<Animation>,
+    undo: Vec<Snapshot>,
+    redo: Vec<Snapshot>,
     drawing: draw::Drawing,
     camera: Option<media::Camera>,
+    recovery: recovery::Recovery,
+}
+struct Snapshot {
+    project: Animation,
+    selected: usize,
+    frame_range: Range<usize>,
 }
 fn document() -> Document {
     web_sys::window()
@@ -91,6 +100,9 @@ fn report(result: Result<()>) {
 }
 impl App {
     fn clean(&self) -> Result<()> {
+        if self.recovery.locked {
+            return Err("Wait for the recovery operation to finish.".into());
+        }
         if self.loading {
             return Err("A file is loading. Wait or choose another file.".into());
         }
@@ -109,6 +121,7 @@ impl App {
     fn seek(&mut self, index: usize) {
         self.pause();
         self.selected = index;
+        self.frame_range = index..index + 1;
         self.reset_drawing();
         self.elapsed = self.project.frames()[..index]
             .iter()
@@ -117,13 +130,20 @@ impl App {
     }
     fn commit(&mut self, project: Animation) {
         self.pause();
-        self.undo
-            .push(std::mem::replace(&mut self.project, project));
+        self.undo.push(Snapshot {
+            project: std::mem::replace(&mut self.project, project),
+            selected: self.selected,
+            frame_range: self.frame_range.clone(),
+        });
         self.redo.clear();
         self.limit_history();
+        let end = self.frame_range.end.min(self.project.frames().len());
+        let range = self.frame_range.start.min(end - 1)..end;
         self.seek(self.selected.min(self.project.frames().len() - 1));
+        self.frame_range = range;
         self.dirty = false;
         self.modified = true;
+        self.recovery.changed();
     }
     fn limit_history(&mut self) {
         while self.undo.len() + self.redo.len() > 100
@@ -131,7 +151,7 @@ impl App {
                 .undo
                 .iter()
                 .chain(self.redo.iter())
-                .map(|p| p.width() * p.height() * p.frames().len())
+                .map(|s| s.project.width() * s.project.height() * s.project.frames().len())
                 .sum::<usize>()
                 > 16_000_000
         {
@@ -166,8 +186,24 @@ impl App {
         if editor {
             node::<HtmlTextAreaElement>("editor")?.set_value(&entry.frame.text());
             input("duration")?.set_value(&entry.duration_ms.to_string());
+            input("range-first")?.set_value(&(self.frame_range.start + 1).to_string());
+            input("range-last")?.set_value(&self.frame_range.end.to_string());
         }
-        let busy = self.loading || self.camera.is_some();
+        for id in ["range-first", "range-last"] {
+            input(id)?.set_max(&self.project.frames().len().to_string());
+        }
+        let range_label = format!(
+            "Selected frames {} to {} ({} frame{})",
+            self.frame_range.start + 1,
+            self.frame_range.end,
+            self.frame_range.len(),
+            if self.frame_range.len() == 1 { "" } else { "s" },
+        );
+        let range_count = node::<Element>("range-count")?;
+        if range_count.text_content().as_deref() != Some(range_label.as_str()) {
+            range_count.set_text_content(Some(&range_label));
+        }
+        let busy = self.loading || self.camera.is_some() || self.recovery.locked;
         node::<Element>("play")?.set_text_content(Some(if self.playing {
             "Pause"
         } else {
@@ -186,6 +222,11 @@ impl App {
             "duration",
             "add-frame",
             "duplicate",
+            "range-first",
+            "range-last",
+            "select-range",
+            "range-duration",
+            "apply-range-duration",
             "flip-horizontal",
             "flip-vertical",
             "apply-effect",
@@ -205,11 +246,14 @@ impl App {
             ("play", busy || self.project.frames().len() == 1),
             ("previous", busy),
             ("next", busy),
-            ("delete-frame", self.project.frames().len() == 1 || busy),
-            ("move-left", self.selected == 0 || busy),
+            (
+                "delete-frame",
+                self.frame_range.len() == self.project.frames().len() || busy,
+            ),
+            ("move-left", self.frame_range.start == 0 || busy),
             (
                 "move-right",
-                self.selected + 1 == self.project.frames().len() || busy,
+                self.frame_range.end == self.project.frames().len() || busy,
             ),
             ("undo", self.undo.is_empty() || busy),
             ("redo", self.redo.is_empty() || busy),
@@ -225,6 +269,7 @@ impl App {
                     .map_err(|_| "Cannot update controls")?;
             }
         }
+        self.recovery.controls(busy || self.dirty)?;
         media::controls(self)
     }
     fn update_frame(&mut self, frame: Frame, duration_ms: u32) -> Result<()> {
@@ -247,6 +292,7 @@ pub fn start() -> std::result::Result<(), JsValue> {
         *cell.borrow_mut() = Some(App {
             project,
             selected: 0,
+            frame_range: 0..1,
             playing: !reduced,
             elapsed: 0.0,
             last: now(),
@@ -259,6 +305,7 @@ pub fn start() -> std::result::Result<(), JsValue> {
             redo: vec![],
             drawing: draw::Drawing::default(),
             camera: None,
+            recovery: recovery::Recovery::default(),
         })
     });
     for id in [
@@ -274,6 +321,8 @@ pub fn start() -> std::result::Result<(), JsValue> {
         "delete-frame",
         "move-left",
         "move-right",
+        "select-range",
+        "apply-range-duration",
         "flip-horizontal",
         "flip-vertical",
         "undo",
@@ -287,6 +336,14 @@ pub fn start() -> std::result::Result<(), JsValue> {
         listen(id, "click", move |_| report(action(id)))?;
     }
     listen("mode", "change", move |_| report(fields()))?;
+    for id in ["range-first", "range-last", "range-duration"] {
+        listen(id, "focus", |_| {
+            report(state(|app| {
+                app.pause();
+                app.display(false)
+            }))
+        })?;
+    }
     draw::listen_all()?;
     fill_effects().map_err(|e| JsValue::from_str(&e))?;
     fill_art("").map_err(|e| JsValue::from_str(&e))?;
@@ -319,6 +376,9 @@ pub fn start() -> std::result::Result<(), JsValue> {
         listen(id, "input", move |_| {
             report(state(|app| {
                 app.pause();
+                if app.recovery.locked {
+                    return Err("Wait for the recovery operation to finish.".into());
+                }
                 if !app.dirty {
                     status("Frame edits are not applied yet.", false);
                 }
@@ -342,6 +402,7 @@ pub fn start() -> std::result::Result<(), JsValue> {
         if document().hidden() {
             report(state(|app| {
                 app.pause();
+                recovery::tick(app, true);
                 app.display(false)
             }));
         }
@@ -402,6 +463,7 @@ pub fn start() -> std::result::Result<(), JsValue> {
         },
         false,
     );
+    recovery::start()?;
     Ok(())
 }
 fn listen(
@@ -544,12 +606,18 @@ fn action(id: &str) -> Result<()> {
     }
     state(|app| {
         if id == "discard" {
+            if app.recovery.locked {
+                return Err("Wait for the recovery operation to finish.".into());
+            }
             app.dirty = false;
             app.display(true)?;
             status("Frame edits discarded.", false);
             return Ok(());
         }
         if id == "apply" {
+            if app.recovery.locked {
+                return Err("Wait for the recovery operation to finish.".into());
+            }
             if app.loading {
                 return Err("Wait for the file to finish loading.".into());
             }
@@ -577,7 +645,9 @@ fn action(id: &str) -> Result<()> {
                     app.pause();
                 } else {
                     if !app.project.looping() && app.elapsed >= app.project.duration_ms() as f64 {
+                        let range = app.frame_range.clone();
                         app.seek(0);
+                        app.frame_range = range;
                     }
                     app.last = now();
                     app.playing = true;
@@ -600,51 +670,99 @@ fn action(id: &str) -> Result<()> {
                     app.redo.pop()
                 }
                 .ok_or("No history is available")?;
-                let current = std::mem::replace(&mut app.project, previous);
+                let current = Snapshot {
+                    project: std::mem::replace(&mut app.project, previous.project),
+                    selected: app.selected,
+                    frame_range: app.frame_range.clone(),
+                };
                 if id == "undo" {
                     app.redo.push(current);
                 } else {
                     app.undo.push(current);
                 }
                 app.limit_history();
-                app.seek(app.selected.min(app.project.frames().len() - 1));
+                app.seek(previous.selected);
+                app.frame_range = previous.frame_range;
                 app.modified = true;
+                app.recovery.changed();
+            }
+            "select-range" => {
+                let first = number("range-first")?;
+                let last = number("range-last")?;
+                if first == 0 || first > last || last > app.project.frames().len() {
+                    return Err(
+                        "Choose a frame range with 1 <= first <= last <= frame count".into(),
+                    );
+                }
+                let range = first - 1..last;
+                app.seek(app.selected.clamp(range.start, range.end - 1));
+                app.frame_range = range;
+            }
+            "apply-range-duration" => {
+                let duration = u32::try_from(number("range-duration")?)
+                    .map_err(|_| "Frame duration is too large")?;
+                let mut project = app.project.clone();
+                project.set_frame_durations(app.frame_range.clone(), duration)?;
+                if project != app.project {
+                    app.commit(project);
+                }
+                status("Selected frame durations applied.", false);
             }
             "add-frame" | "duplicate" | "delete-frame" | "move-left" | "move-right" => {
                 let mut project = app.project.clone();
+                let range = app.frame_range.clone();
+                let offset = app
+                    .selected
+                    .saturating_sub(range.start)
+                    .min(range.len() - 1);
+                let (selected, new_range);
                 match id {
-                    "add-frame" => project.insert_frame(
-                        app.selected + 1,
-                        TimedFrame {
-                            frame: Frame::blank(project.width(), project.height())?,
-                            duration_ms: project.frames()[app.selected].duration_ms,
-                        },
-                    )?,
-                    "duplicate" => project
-                        .insert_frame(app.selected + 1, project.frames()[app.selected].clone())?,
-                    "delete-frame" => project.remove_frame(app.selected)?,
-                    "move-left" => project.swap_frames(
-                        app.selected,
-                        app.selected
-                            .checked_sub(1)
-                            .ok_or("Already the first frame")?,
-                    )?,
-                    _ => project.swap_frames(app.selected, app.selected + 1)?,
+                    "add-frame" => {
+                        project.insert_frame(
+                            app.selected + 1,
+                            TimedFrame {
+                                frame: Frame::blank(project.width(), project.height())?,
+                                duration_ms: project.frames()[app.selected].duration_ms,
+                            },
+                        )?;
+                        selected = app.selected + 1;
+                        new_range = selected..selected + 1;
+                    }
+                    "duplicate" => {
+                        project.duplicate_frames(range.clone())?;
+                        selected = range.end + offset;
+                        new_range = range.end..range.end + range.len();
+                    }
+                    "delete-frame" => {
+                        project.remove_frames(range.clone())?;
+                        selected = range.start.min(project.frames().len() - 1);
+                        new_range = selected..selected + 1;
+                    }
+                    _ => {
+                        let destination = if id == "move-left" {
+                            range
+                                .start
+                                .checked_sub(1)
+                                .ok_or("Already the first frame range")?
+                        } else {
+                            range.start + 1
+                        };
+                        project.move_frames(range.clone(), destination)?;
+                        selected = destination + offset;
+                        new_range = destination..destination + range.len();
+                    }
                 }
                 app.commit(project);
-                if id == "add-frame" || id == "duplicate" || id == "move-right" {
-                    app.selected += 1;
-                } else if id == "move-left" {
-                    app.selected -= 1;
-                }
-                app.seek(app.selected);
+                app.seek(selected);
+                app.frame_range = new_range;
             }
             "flip-horizontal" | "flip-vertical" => {
                 let entry = &app.project.frames()[app.selected];
-                let frame = if id == "flip-horizontal" {
-                    entry.frame.flip_horizontal()
-                } else {
-                    entry.frame.flip_vertical()
+                let frame = match (id, checked("mirror-glyphs")?) {
+                    ("flip-horizontal", true) => entry.frame.mirror_horizontal(),
+                    ("flip-horizontal", false) => entry.frame.flip_horizontal(),
+                    (_, true) => entry.frame.mirror_vertical(),
+                    (_, false) => entry.frame.flip_vertical(),
                 };
                 app.update_frame(frame, entry.duration_ms)?;
             }
@@ -762,6 +880,7 @@ fn fill_art(query: &str) -> Result<()> {
 }
 fn tick() -> Result<()> {
     state(|app| {
+        recovery::tick(app, false);
         if !app.playing || document().hidden() {
             return Ok(());
         }
@@ -782,6 +901,9 @@ fn tick() -> Result<()> {
 }
 fn begin_file(id: &'static str) {
     let prepare = state(|app| {
+        if app.recovery.locked {
+            return Err("Wait for the recovery operation to finish before opening a file.".into());
+        }
         // A newly selected file supersedes any earlier asynchronous read.
         if app.dirty {
             return Err("Apply or discard frame edits before opening a file.".into());

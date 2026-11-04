@@ -89,6 +89,34 @@ fn frame_transforms_and_clipped_composition() {
     assert!(canvas.rectangle(i32::MAX, 0, 2, 2, b'#').is_err());
 }
 #[test]
+fn directional_mirrors_reflect_pairs_and_preserve_literal_flips() {
+    let frame = Frame::from_text("/([{< v\\").unwrap();
+    assert_eq!(frame.flip_horizontal().text(), "\\v <{[(".to_string() + "/");
+    assert_eq!(frame.mirror_horizontal().text(), "/v >}])\\");
+    let frame = Frame::from_text("/^\nv\\").unwrap();
+    assert_eq!(frame.flip_vertical().text(), "v\\\n/^");
+    assert_eq!(frame.mirror_vertical().text(), "^/\n\\v");
+    // Looking-glass fixtures keep every printable glyph, including significant spaces.
+    for width in [1, 5, 19, 95] {
+        let frame = Frame::new(
+            width,
+            2,
+            (0..width * 2).map(|i| 32 + (i % 95) as u8).collect(),
+        )
+        .unwrap();
+        for reflected in [frame.mirror_horizontal(), frame.mirror_vertical()] {
+            assert_eq!(
+                (reflected.width(), reflected.height()),
+                (frame.width(), frame.height())
+            );
+            ascii(&reflected);
+        }
+        assert_eq!(frame.mirror_horizontal().mirror_horizontal(), frame);
+        assert_eq!(frame.mirror_vertical().mirror_vertical(), frame);
+    }
+}
+
+#[test]
 fn animation_clock_uses_per_frame_durations_and_loop_policy() {
     let mut project = Animation::new(vec![timed("a", 10), timed("b", 30)], true).unwrap();
     for (time, index) in [

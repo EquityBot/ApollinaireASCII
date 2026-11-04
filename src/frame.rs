@@ -88,6 +88,42 @@ impl Frame {
             ..self.clone()
         }
     }
+    /// Flip columns and reflect `/\`, `()`, `[]`, `{}` and `<>` pairs.
+    /// Other characters, including letters, keep their original glyphs.
+    pub fn mirror_horizontal(&self) -> Self {
+        let mut frame = self.flip_horizontal();
+        for cell in &mut frame.cells {
+            *cell = match *cell {
+                b'/' => b'\\',
+                b'\\' => b'/',
+                b'(' => b')',
+                b')' => b'(',
+                b'[' => b']',
+                b']' => b'[',
+                b'{' => b'}',
+                b'}' => b'{',
+                b'<' => b'>',
+                b'>' => b'<',
+                other => other,
+            };
+        }
+        frame
+    }
+    /// Flip rows and reflect `/\` and `^v` pairs. Other glyphs stay unchanged.
+    /// Use `flip_vertical` when `v` is text rather than an arrowhead.
+    pub fn mirror_vertical(&self) -> Self {
+        let mut frame = self.flip_vertical();
+        for cell in &mut frame.cells {
+            *cell = match *cell {
+                b'/' => b'\\',
+                b'\\' => b'/',
+                b'^' => b'v',
+                b'v' => b'^',
+                other => other,
+            };
+        }
+        frame
+    }
     pub fn crop(&self, x: usize, y: usize, width: usize, height: usize) -> Result<Self> {
         dimensions(width, height)?;
         if x.checked_add(width).is_none_or(|v| v > self.width)

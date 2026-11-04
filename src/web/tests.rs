@@ -101,6 +101,8 @@ fn blank(width: usize, height: usize) {
     check("diagram", false);
     check("arrow", true);
     check("onion-skin", false);
+    check("mirror-glyphs", false);
+    check("stamp-transparent", true);
     check("border", false);
     set_value("brush", "#");
     set_value("stamp", "");
@@ -205,6 +207,178 @@ fn pencil_draws_by_pointer_and_keyboard() {
         art(),
         rows(&[" ####   ", "    #   ", "    #   ", "***     "])
     );
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamps_preview_cancel_clip_and_commit_as_one_undo_step() {
+    blank(8, 4);
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["A", " ", "B", "Enter", " ", "C", " "]);
+    let original = rows(&["A B     ", " C      ", "        ", "        "]);
+    assert_eq!(art(), original);
+    tool("area");
+    drag(&[(0, 0), (2, 1)]);
+    click("save-stamp");
+    let picker = element::<HtmlSelectElement>("art-stamp");
+    let count = picker.child_element_count();
+    click("save-stamp");
+    assert_eq!(
+        picker.child_element_count(),
+        count,
+        "same grid is not saved twice"
+    );
+    tool("stamp-art");
+    pointer("pointerdown", (3, 1));
+    assert_eq!(
+        art(),
+        rows(&["A B     ", " C A B  ", "    C   ", "        "])
+    );
+    pointer("pointermove", (5, 2));
+    let placed = rows(&["A B     ", " C      ", "     A B", "      C "]);
+    assert_eq!(art(), placed, "moving a preview leaves no trail");
+    pointer("pointercancel", (5, 2));
+    assert_eq!(art(), original);
+    drag(&[(5, 2)]);
+    assert_eq!(art(), placed);
+    click("undo");
+    assert_eq!(art(), original);
+    click("redo");
+    assert_eq!(art(), placed);
+    // A stamp survives frame and project changes, but is not part of their history.
+    blank(4, 2);
+    tool("fill");
+    drag(&[(0, 0)]);
+    tool("stamp-art");
+    cursor_to((1, 0));
+    keys(&[" ", "Enter"]);
+    assert_eq!(art(), rows(&["#A#B", "##C#"]));
+    click("undo");
+    check("stamp-transparent", false);
+    cursor_to((1, 0));
+    keys(&[" ", "Enter"]);
+    assert_eq!(art(), rows(&["#A B", "# C "]));
+    click("undo");
+    cursor_to((3, 1));
+    keys(&[" ", "Enter"]);
+    assert_eq!(
+        art(),
+        rows(&["####", "###A"]),
+        "edge placement clips safely"
+    );
+    click("undo");
+    cursor_to((0, 0));
+    keys(&[" ", "ArrowRight", "Escape"]);
+    assert_eq!(art(), rows(&["####", "####"]));
+    click("delete-stamp");
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamp_library_is_bounded_and_removal_keeps_artwork() {
+    blank(1, 1);
+    // Each test starts with no saved entries, without inspecting application state.
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    for i in 0..16u8 {
+        tool("type");
+        cursor_to((0, 0));
+        keys(&[&(char::from(b'A' + i)).to_string()]);
+        tool("area");
+        drag(&[(0, 0)]);
+        click("save-stamp");
+    }
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    tool("type");
+    cursor_to((0, 0));
+    keys(&["Z"]);
+    tool("area");
+    drag(&[(0, 0)]);
+    click("save-stamp");
+    assert!(status().contains("limited to 16"));
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    let picker = element::<HtmlSelectElement>("art-stamp");
+    picker.set_value("0");
+    picker
+        .dispatch_event(&web_sys::Event::new("change").unwrap())
+        .unwrap();
+    tool("stamp-art");
+    drag(&[(0, 0)]);
+    assert_eq!(art(), "A", "choosing an earlier stamp uses that grid");
+    click("undo");
+    tool("area");
+    drag(&[(0, 0)]);
+    click("delete-stamp");
+    assert_eq!(art(), "Z");
+    click("save-stamp");
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    tool("stamp-art");
+    drag(&[(0, 0)]);
+    assert!(status().contains("save it as a stamp first"));
+    assert_eq!(art(), "Z");
+    assert_eq!(
+        element::<Element>("art-stamp").text_content().unwrap(),
+        "No stamps yet"
+    );
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamps_limit_total_cells_before_the_entry_limit() {
+    blank(1, 1);
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    for i in 0..8u8 {
+        blank(512, 256);
+        tool("type");
+        drag(&[(0, 0)]);
+        keys(&[&char::from(b'A' + i).to_string()]);
+        tool("area");
+        drag(&[(0, 0), (511, 255)]);
+        click("save-stamp");
+        assert_eq!(
+            element::<Element>("art-stamp").child_element_count(),
+            usize::from((i + 1).min(7)) as u32
+        );
+    }
+    assert!(status().contains("1,000,000 cells"));
+    // A duplicate remains selectable even when a new full-size entry cannot fit.
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["A"]);
+    tool("area");
+    drag(&[(0, 0), (511, 255)]);
+    click("save-stamp");
+    assert!(status().contains("saved as a stamp"));
+    assert_eq!(element::<HtmlSelectElement>("art-stamp").value(), "0");
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+}
+
+#[wasm_bindgen_test]
+fn directional_mirror_is_optional_and_undoable() {
+    blank(4, 2);
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["/", "(", "<", "v", "Enter", "\\", ")", ">", "^"]);
+    let original = rows(&["/(<v", "\\)>^"]);
+    assert_eq!(art(), original);
+    click("flip-horizontal");
+    assert_eq!(art(), rows(&["v<(/", "^>)\\"]));
+    click("undo");
+    check("mirror-glyphs", true);
+    click("flip-horizontal");
+    assert_eq!(art(), rows(&["v>)\\", "^<(/"]));
+    click("undo");
+    assert_eq!(art(), original);
+    click("flip-vertical");
+    assert_eq!(art(), rows(&["/)>v", "\\(<^"]));
+    click("undo");
+    assert_eq!(art(), original);
 }
 
 #[wasm_bindgen_test]
@@ -513,6 +687,20 @@ fn non_ascii_input_never_reaches_the_artwork() {
 fn frame_count() -> String {
     element::<Element>("frame-count").text_content().unwrap()
 }
+fn choose_range(first: usize, last: usize) {
+    set_value("range-first", &first.to_string());
+    set_value("range-last", &last.to_string());
+    click("select-range");
+}
+fn selected_range() -> (String, String) {
+    (
+        element::<HtmlInputElement>("range-first").value(),
+        element::<HtmlInputElement>("range-last").value(),
+    )
+}
+fn seek_frame(index: usize) {
+    input_event("timeline", &index.to_string());
+}
 fn input_event(id: &str, value: &str) {
     let field = element::<HtmlElement>(id);
     if let Some(input) = field.dyn_ref::<HtmlInputElement>() {
@@ -523,6 +711,21 @@ fn input_event(id: &str, value: &str) {
     field
         .dispatch_event(&web_sys::Event::new("input").unwrap())
         .unwrap();
+}
+async fn wait_for(mut condition: impl FnMut() -> bool) {
+    for _ in 0..500 {
+        if condition() {
+            return;
+        }
+        let tick = js_sys::Promise::new(&mut |resolve, _| {
+            web_sys::window()
+                .unwrap()
+                .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 10)
+                .unwrap();
+        });
+        wasm_bindgen_futures::JsFuture::from(tick).await.unwrap();
+    }
+    panic!("Timed out waiting for the editor: {}", status());
 }
 /// Choose a file in the Open control as a user would, then wait for the read to finish.
 async fn open(name: &str, contents: &str) -> String {
@@ -548,6 +751,398 @@ async fn open(name: &str, contents: &str) -> String {
         wasm_bindgen_futures::JsFuture::from(tick).await.unwrap();
     }
     panic!("{name} is still loading: {}", status());
+}
+
+#[wasm_bindgen_test]
+async fn frame_ranges_duplicate_move_time_and_restore_the_view_with_history() {
+    blank(1, 1);
+    let project = super::Animation::new(
+        "ABCDE"
+            .chars()
+            .enumerate()
+            .map(|(i, c)| super::TimedFrame {
+                frame: super::Frame::from_text(&c.to_string()).unwrap(),
+                duration_ms: (i as u32 + 1) * 100,
+            })
+            .collect(),
+        true,
+    )
+    .unwrap();
+    open("range.json", &project.to_json()).await;
+    seek_frame(2);
+    choose_range(2, 3);
+    assert_eq!(art(), "C");
+    click("duplicate");
+    assert_eq!(frame_count(), "Frame 5 / 7");
+    assert_eq!(selected_range(), ("4".into(), "5".into()));
+    assert_eq!(art(), "C");
+    click("undo");
+    assert_eq!(frame_count(), "Frame 3 / 5");
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    click("redo");
+    assert_eq!(frame_count(), "Frame 5 / 7");
+    assert_eq!(selected_range(), ("4".into(), "5".into()));
+    click("undo");
+    click("move-left");
+    assert_eq!(frame_count(), "Frame 2 / 5");
+    assert_eq!(selected_range(), ("1".into(), "2".into()));
+    assert!(element::<Element>("move-left").has_attribute("disabled"));
+    click("move-right");
+    assert_eq!(frame_count(), "Frame 3 / 5");
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    set_value("range-duration", "170");
+    click("apply-range-duration");
+    assert_eq!(element::<HtmlInputElement>("duration").value(), "170");
+    click("undo");
+    assert_eq!(element::<HtmlInputElement>("duration").value(), "300");
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    click("delete-frame");
+    assert_eq!(frame_count(), "Frame 2 / 3");
+    assert_eq!(art(), "D");
+    click("undo");
+    assert_eq!(art(), "C");
+    assert_eq!(frame_count(), "Frame 3 / 5");
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    // A failed duration change must not add a history entry.
+    set_value("range-duration", "9");
+    click("apply-range-duration");
+    assert!(status().contains("duration"), "{}", status());
+    click("undo");
+    assert_eq!(frame_count(), "Frame 2 / 5");
+    assert_eq!(selected_range(), ("1".into(), "2".into()));
+    choose_range(1, 5);
+    assert!(element::<Element>("delete-frame").has_attribute("disabled"));
+    assert!(element::<Element>("move-right").has_attribute("disabled"));
+    set_value("range-first", "4");
+    set_value("range-last", "2");
+    click("select-range");
+    assert!(status().contains("range"), "{}", status());
+    // A manual seek collapses the range.
+    seek_frame(4);
+    assert_eq!(selected_range(), ("5".into(), "5".into()));
+    // Replacing the project retains the previous view in undo history.
+    choose_range(3, 5);
+    element::<HtmlSelectElement>("mode").set_value("blank");
+    click("generate");
+    click("undo");
+    assert_eq!(art(), "E");
+    assert_eq!(frame_count(), "Frame 5 / 5");
+    assert_eq!(selected_range(), ("3".into(), "5".into()));
+}
+
+#[wasm_bindgen_test]
+async fn playback_keeps_the_frame_range_at_completion_and_restart() {
+    blank(1, 1);
+    let project = super::Animation::new(
+        "ABC"
+            .chars()
+            .map(|c| super::TimedFrame {
+                frame: super::Frame::from_text(&c.to_string()).unwrap(),
+                duration_ms: 10,
+            })
+            .collect(),
+        false,
+    )
+    .unwrap();
+    open("playback-range.json", &project.to_json()).await;
+    choose_range(2, 3);
+    click("play");
+    wait_for(|| {
+        art() == "C" && element::<Element>("play").text_content().as_deref() == Some("Play")
+    })
+    .await;
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    click("play");
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+    wait_for(|| element::<Element>("play").text_content().as_deref() == Some("Play")).await;
+    assert_eq!(selected_range(), ("2".into(), "3".into()));
+}
+
+fn recovery_phase() -> String {
+    element::<Element>("recovery-status")
+        .get_attribute("data-state")
+        .unwrap_or_default()
+}
+async fn recovery_settled() {
+    wait_for(|| {
+        !element::<HtmlInputElement>("recovery-enabled").disabled()
+            && !matches!(recovery_phase().as_str(), "checking" | "saving" | "pending")
+    })
+    .await;
+}
+async fn saved_project() -> Option<super::Animation> {
+    let value = super::recovery::read_record().await.unwrap();
+    if value.is_undefined() {
+        return None;
+    }
+    let raw = value.as_string().unwrap();
+    let (_, json) = raw.split_once('\n').unwrap();
+    if json.is_empty() {
+        None
+    } else {
+        Some(super::Animation::from_json(json).unwrap())
+    }
+}
+
+#[wasm_bindgen_test]
+async fn local_recovery_is_opt_in_serialised_restoreable_and_undoable() {
+    blank(4, 1);
+    recovery_settled().await;
+    check("recovery-enabled", false);
+    if !element::<Element>("discard-recovery").has_attribute("disabled") {
+        click("discard-recovery");
+        recovery_settled().await;
+    }
+    let initial = super::recovery::read_record().await.unwrap();
+    tool("type");
+    keys(&["A"]);
+    assert_eq!(
+        super::recovery::read_record().await.unwrap(),
+        initial,
+        "No artwork is stored without opt-in"
+    );
+    check("recovery-enabled", true);
+    // Editing and pausing while the first save is in flight must not lose the
+    // captured revision or silently schedule a later write after pausing.
+    keys(&["B", "C"]);
+    check("recovery-enabled", false);
+    assert!(element::<HtmlInputElement>("recovery-enabled").disabled());
+    recovery_settled().await;
+    assert_eq!(
+        saved_project().await.unwrap().frames()[0].frame.text(),
+        "A   "
+    );
+    check("recovery-enabled", true);
+    recovery_settled().await;
+    assert_eq!(recovery_phase(), "saved");
+    assert_eq!(
+        saved_project().await.unwrap().frames()[0].frame.text(),
+        "ABC "
+    );
+    // This character follows the existing grouped-typing path, not commit().
+    keys(&["D"]);
+    wait_for(|| recovery_phase() == "saved").await;
+    assert_eq!(
+        saved_project().await.unwrap().frames()[0].frame.text(),
+        "ABCD"
+    );
+    check("recovery-enabled", false);
+    element::<HtmlSelectElement>("mode").set_value("blank");
+    click("generate");
+    assert_eq!(art(), "    ");
+    tool("pencil");
+    pointer("pointerdown", (0, 0));
+    click("restore-recovery");
+    assert!(element::<Element>("apply").has_attribute("disabled"));
+    pointer("pointerup", (3, 0));
+    assert_eq!(art(), "    ", "Recovery cancels unfinished stroke previews");
+    // Mutation entry points must reject late synthetic events too.
+    element::<Element>("apply")
+        .dispatch_event(&web_sys::Event::new("click").unwrap())
+        .unwrap();
+    assert!(status().contains("recovery operation"), "{}", status());
+    recovery_settled().await;
+    assert_eq!(art(), "ABCD");
+    click("undo");
+    assert_eq!(art(), "    ");
+    wait_for(|| recovery_phase() == "saved").await;
+    assert_eq!(
+        saved_project().await.unwrap().frames()[0].frame.text(),
+        "    "
+    );
+    click("redo");
+    wait_for(|| recovery_phase() == "saved").await;
+    assert_eq!(
+        saved_project().await.unwrap().frames()[0].frame.text(),
+        "ABCD"
+    );
+    // Identical JSON with a new revision still represents a competing claim.
+    let previous = super::recovery::read_record().await.unwrap();
+    let json = saved_project().await.unwrap().to_json();
+    let other: wasm_bindgen::JsValue = format!("other-tab\n{json}").into();
+    assert!(
+        super::recovery::replace_record(previous, other.clone())
+            .await
+            .is_ok()
+    );
+    tool("type");
+    cursor_to((0, 0));
+    keys(&["X"]);
+    wait_for(|| recovery_phase() == "conflict").await;
+    assert_eq!(art(), "XBCD");
+    assert!(!element::<HtmlInputElement>("recovery-enabled").checked());
+    assert_eq!(super::recovery::read_record().await.unwrap(), other);
+    check("recovery-enabled", true);
+    assert_eq!(recovery_phase(), "error");
+    assert_eq!(super::recovery::read_record().await.unwrap(), other);
+    tool("pencil");
+    pointer("pointerdown", (0, 0));
+    click("discard-recovery");
+    pointer("pointerup", (3, 0));
+    assert_eq!(art(), "XBCD");
+    recovery_settled().await;
+    assert!(saved_project().await.is_none());
+    assert!(!element::<HtmlInputElement>("recovery-enabled").checked());
+}
+
+#[wasm_bindgen_test]
+async fn recovery_compare_and_write_rejects_stale_claims_and_discards() {
+    use std::{future::poll_fn, pin::pin, task::Poll};
+    let expected = super::recovery::read_record().await.unwrap();
+    let project = super::Animation::still(super::Frame::from_text("claim").unwrap());
+    let a: wasm_bindgen::JsValue = format!("claim-a\n{}", project.to_json()).into();
+    let b: wasm_bindgen::JsValue = format!("claim-b\n{}", project.to_json()).into();
+    let mut first = pin!(super::recovery::replace_record(expected.clone(), a.clone()));
+    let mut second = pin!(super::recovery::replace_record(expected.clone(), b.clone()));
+    let (mut first_result, mut second_result) = (None, None);
+    let (first_result, second_result) = poll_fn(|cx| {
+        if first_result.is_none()
+            && let Poll::Ready(result) = first.as_mut().poll(cx)
+        {
+            first_result = Some(result);
+        }
+        if second_result.is_none()
+            && let Poll::Ready(result) = second.as_mut().poll(cx)
+        {
+            second_result = Some(result);
+        }
+        if first_result.is_some() && second_result.is_some() {
+            Poll::Ready((first_result.take().unwrap(), second_result.take().unwrap()))
+        } else {
+            Poll::Pending
+        }
+    })
+    .await;
+    assert_ne!(
+        first_result.is_ok(),
+        second_result.is_ok(),
+        "Only one competing claim may win"
+    );
+    let winner = super::recovery::read_record().await.unwrap();
+    assert!(winner == a || winner == b);
+    // Stale discard cannot erase the winner.
+    assert!(
+        super::recovery::replace_record(expected.clone(), "discarded\n".into())
+            .await
+            .is_err()
+    );
+    assert_eq!(super::recovery::read_record().await.unwrap(), winner);
+    assert!(
+        super::recovery::replace_record(winner, "discarded\n".into())
+            .await
+            .is_ok()
+    );
+    // A discard marker also fences an old empty-slot writer.
+    assert!(
+        super::recovery::replace_record(wasm_bindgen::JsValue::UNDEFINED, a)
+            .await
+            .is_err()
+    );
+    // Leave the editor's observed slot unchanged for the other browser cases.
+    let marker = super::recovery::read_record().await.unwrap();
+    assert!(
+        super::recovery::replace_record(marker, expected)
+            .await
+            .is_ok()
+    );
+}
+
+/// Enable recovery from a slot this tab may claim and wait until the tab is idle at 'saved'.
+async fn recovery_saved_and_idle() {
+    recovery_settled().await;
+    check("recovery-enabled", false);
+    if !element::<Element>("discard-recovery").has_attribute("disabled") {
+        click("discard-recovery");
+        recovery_settled().await;
+    }
+    check("recovery-enabled", true);
+    recovery_settled().await;
+    assert_eq!(recovery_phase(), "saved");
+}
+/// Stand in for another tab, or browser clearing, replacing this tab's saved record.
+async fn replace_saved_record(value: wasm_bindgen::JsValue) {
+    let ours = super::recovery::read_record().await.unwrap();
+    assert!(super::recovery::replace_record(ours, value).await.is_ok());
+}
+
+#[wasm_bindgen_test]
+async fn idle_recovery_stops_when_the_tab_returns_after_another_tab_or_clearing() {
+    blank(3, 1);
+    assert!(!document().hidden());
+    recovery_saved_and_idle().await;
+    // Another tab discards; this tab has nothing to write, so only returning to it can tell.
+    replace_saved_record("other-tab\n".into()).await;
+    assert_eq!(recovery_phase(), "saved");
+    web_sys::window()
+        .unwrap()
+        .dispatch_event(&web_sys::Event::new("focus").unwrap())
+        .unwrap();
+    wait_for(|| recovery_phase() == "conflict").await;
+    assert!(!element::<HtmlInputElement>("recovery-enabled").checked());
+    // Clearing site data leaves an empty slot; showing the page again must notice that too.
+    recovery_saved_and_idle().await;
+    replace_saved_record(wasm_bindgen::JsValue::UNDEFINED).await;
+    document()
+        .dispatch_event(&web_sys::Event::new("visibilitychange").unwrap())
+        .unwrap();
+    wait_for(|| recovery_phase() == "conflict").await;
+    assert!(!element::<HtmlInputElement>("recovery-enabled").checked());
+}
+
+#[wasm_bindgen_test]
+async fn recovery_conflict_reaches_the_main_status_with_the_panel_closed() {
+    blank(3, 1);
+    recovery_saved_and_idle().await;
+    assert!(!element::<Element>("recovery-panel").has_attribute("open"));
+    replace_saved_record("other-tab\n".into()).await;
+    tool("type");
+    keys(&["Z"]);
+    wait_for(|| recovery_phase() == "conflict").await;
+    assert!(
+        status().contains("another tab changed the saved record"),
+        "{}",
+        status()
+    );
+}
+
+#[wasm_bindgen_test]
+async fn discard_removes_a_corrupt_object_record_but_not_a_newer_one() {
+    blank(3, 1);
+    recovery_saved_and_idle().await;
+    // Another program leaves a non-text record; each read returns a fresh copy of it.
+    replace_saved_record(js_sys::Object::new().into()).await;
+    web_sys::window()
+        .unwrap()
+        .dispatch_event(&web_sys::Event::new("focus").unwrap())
+        .unwrap();
+    wait_for(|| recovery_phase() == "conflict").await;
+    assert!(element::<Element>("restore-recovery").has_attribute("disabled"));
+    click("discard-recovery");
+    recovery_settled().await;
+    assert_eq!(recovery_phase(), "off", "{}", status());
+    assert!(saved_project().await.is_none());
+    // A stale view of a corrupt record must not erase a project saved since, or an emptied slot.
+    let marker = super::recovery::read_record().await.unwrap();
+    replace_saved_record(js_sys::Object::new().into()).await;
+    let stale = super::recovery::read_record().await.unwrap();
+    let project = super::Animation::still(super::Frame::from_text("newer").unwrap());
+    let newer: wasm_bindgen::JsValue = format!("other-tab\n{}", project.to_json()).into();
+    replace_saved_record(newer.clone()).await;
+    assert!(
+        super::recovery::replace_record(stale.clone(), "discarded\n".into())
+            .await
+            .is_err()
+    );
+    assert_eq!(super::recovery::read_record().await.unwrap(), newer);
+    replace_saved_record(wasm_bindgen::JsValue::UNDEFINED).await;
+    assert!(
+        super::recovery::replace_record(stale, "discarded\n".into())
+            .await
+            .is_err()
+    );
+    assert!(super::recovery::read_record().await.unwrap().is_undefined());
+    // Leave the slot as this tab last observed it for the other browser cases.
+    replace_saved_record(marker).await;
 }
 
 #[wasm_bindgen_test]
