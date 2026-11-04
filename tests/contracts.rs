@@ -617,13 +617,14 @@ fn every_image_mode_obeys_ascii_and_rejects_invalid_options() {
 #[test]
 fn edge_glyphs_follow_direction_on_strong_edges_only() {
     // Which side of a line through the middle each pixel lies on, the line running along `glyph`.
-    let sides: [(u8, fn(i32, i32) -> i32); 4] = [
+    type Side = fn(i32, i32) -> i32;
+    let sides: [(u8, Side); 4] = [
         (b'|', |x, _| x),
         (b'-', |_, y| y),
         (b'/', |x, y| x + y),
         (b'\\', |x, y| x - y),
     ];
-    let picture = |side: fn(i32, i32) -> i32, sign: i32, bright: u8| {
+    let picture = |side: Side, sign: i32, bright: u8| {
         DynamicImage::ImageRgba8(RgbaImage::from_fn(9, 9, |x, y| {
             let lit = side(x as i32 - 4, y as i32 - 4) * sign > 0;
             let tone = if lit { bright } else { 0 };
