@@ -139,6 +139,41 @@ impl Canvas {
         }
         Ok(())
     }
+    /// Outline the ellipse inscribed in a box, clipped to the grid: the cells whose centres lie
+    /// inside it and which touch a cell that does not.
+    pub fn ellipse(
+        &mut self,
+        x: i32,
+        y: i32,
+        width: usize,
+        height: usize,
+        value: u8,
+    ) -> Result<()> {
+        printable(&[value])?;
+        dimensions(width, height)?;
+        let (w, h) = (width as i64, height as i64);
+        // Doubled offsets from the centre keep even sizes whole, and so the outline symmetrical.
+        let inside = |column: i64, row: i64| {
+            let (dx, dy) = (2 * column - (w - 1), 2 * row - (h - 1));
+            dx * dx * h * h + dy * dy * w * w <= w * w * h * h
+        };
+        for row in 0..h {
+            for column in 0..w {
+                let interior = inside(column - 1, row)
+                    && inside(column + 1, row)
+                    && inside(column, row - 1)
+                    && inside(column, row + 1);
+                if inside(column, row)
+                    && !interior
+                    && let (Some(px), Some(py)) =
+                        (x.checked_add(column as i32), y.checked_add(row as i32))
+                {
+                    self.set(px, py, value)?;
+                }
+            }
+        }
+        Ok(())
+    }
     /// Set every cell of a solid rectangle, clipped to the grid.
     pub fn fill_area(
         &mut self,

@@ -19,6 +19,7 @@ apollinaire animate scroll --text "HELLO, FRIEND" --seed 42 --output scroll.html
 apollinaire image photo.jpg --width 100 --ramp fine --gamma 1.2 --contrast 1.3 --dither
 apollinaire image movie.gif --width 72 --output movie.json
 apollinaire image logo.png --width 72 --edges --invert --background 255
+apollinaire image logo.png --width 72 --edge-glyphs
 apollinaire image shots/*.png intro.gif --width 72 --output-dir ascii
 apollinaire image https://example.com/photo.jpg --width 80 --output photo.txt
 apollinaire import art.txt --pad --format json --output art.json
@@ -38,7 +39,7 @@ apollinaire play movie.json --loops 3
 
 Use `-` as the input path for stdin. `.json` input is always parsed as a project and `.txt` as text. Ambiguous input, including stdin, is treated as JSON when it begins with `{` and is syntactically JSON; otherwise it is text. Give literal artwork that is also valid JSON a `.txt` filename to force text interpretation. CRLF is normalised to LF for text imports. `--pad` explicitly pads ragged rows; the browser pads text imports automatically.
 
-`image` accepts a named ramp (`standard`, `fine`, `simple`, `binary`) or a literal sequence ordered from light to dense. Quote literal ramps containing spaces or shell characters. `--cell-aspect` defaults to `0.5`; use `--height` to set rows explicitly. The background is a greyscale value from 0 to 255 for compositing transparency. Gamma and contrast accept 0.1 to 5.0. Animated GIF input retains each frame's delay, normalising zero delay to 100 ms and applying the format's 10 to 60,000 ms limits.
+`image` accepts a named ramp (`standard`, `fine`, `simple`, `binary`) or a literal sequence ordered from light to dense. Quote literal ramps containing spaces or shell characters. `--cell-aspect` defaults to `0.5`; use `--height` to set rows explicitly. The background is a greyscale value from 0 to 255 for compositing transparency. Gamma and contrast accept 0.1 to 5.0. `--edges` maps edge strength through the ramp. `--edge-glyphs` does too, but draws strong edges (at least a quarter of a full black-to-white step) as `|`, `/`, `-` or `\` along their direction. Animated GIF input retains each frame's delay, normalising zero delay to 100 ms and applying the format's 10 to 60,000 ms limits.
 
 `list --tag TEXT` prints each catalogue piece whose name, category or tag contains the text, ignoring case, with its category and tags. It fails when nothing matches.
 

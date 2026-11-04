@@ -614,6 +614,63 @@ fn every_image_mode_obeys_ascii_and_rejects_invalid_options() {
     assert!(decode_media(b"not an image", &RenderOptions::default()).is_err());
     assert!(decode_media(b"P6\n5000 1\n255\n", &RenderOptions::default()).is_err());
 }
+#[test]
+fn edge_glyphs_follow_direction_on_strong_edges_only() {
+    // Which side of a line through the middle each pixel lies on, the line running along `glyph`.
+    type Side = fn(i32, i32) -> i32;
+    let sides: [(u8, Side); 4] = [
+        (b'|', |x, _| x),
+        (b'-', |_, y| y),
+        (b'/', |x, y| x + y),
+        (b'\\', |x, y| x - y),
+    ];
+    let picture = |side: Side, sign: i32, bright: u8| {
+        DynamicImage::ImageRgba8(RgbaImage::from_fn(9, 9, |x, y| {
+            let lit = side(x as i32 - 4, y as i32 - 4) * sign > 0;
+            let tone = if lit { bright } else { 0 };
+            Rgba([tone, tone, tone, 255])
+        }))
+    };
+    let glyphs = RenderOptions {
+        width: 9,
+        height: Some(9),
+        edge_glyphs: true,
+        ..RenderOptions::default()
+    };
+    for (glyph, side) in sides {
+        // Light on either side of a line draws the same character.
+        for sign in [1, -1] {
+            let frame = render_image(&picture(side, sign, 255), &glyphs).unwrap();
+            ascii(&frame);
+            assert_eq!(frame.cells()[4 * 9 + 4], glyph, "{}", frame.text());
+        }
+    }
+    let edges = RenderOptions {
+        edges: true,
+        edge_glyphs: false,
+        ..glyphs.clone()
+    };
+    let step = picture(sides[0].1, 1, 255);
+    let row = |options: &RenderOptions, image: &DynamicImage| {
+        let frame = render_image(image, options).unwrap();
+        String::from_utf8(frame.cells()[..9].to_vec()).unwrap()
+    };
+    assert_eq!(row(&glyphs, &step), "    ||   ");
+    assert_eq!(
+        row(&edges, &step),
+        "    @@   ",
+        "edge mode alone keeps its ramp"
+    );
+    let both = RenderOptions {
+        edges: true,
+        ..glyphs.clone()
+    };
+    assert_eq!(row(&both, &step), "    ||   ");
+    // A faint edge stays a ramp character, the same with the option as without.
+    let faint = picture(sides[0].1, 1, 50);
+    assert_eq!(row(&glyphs, &faint), row(&edges, &faint));
+    assert_eq!(row(&glyphs, &faint), "    ::   ");
+}
 fn gif_bytes(count: usize) -> Vec<u8> {
     let frames: Vec<_> = (0..count)
         .map(|i| {

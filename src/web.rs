@@ -1,6 +1,6 @@
 use crate::{
     Animation, Canvas, EffectOptions, Frame, MAX_INPUT_BYTES, RenderOptions, Result, SceneOptions,
-    TimedFrame, animation, art, decode_media, effects, export, lettering,
+    TimedFrame, animation, art, decode_media, effects, export, image_renderer::RAMPS, lettering,
 };
 use js_sys::{Array, Uint8Array};
 use std::cell::RefCell;
@@ -389,6 +389,20 @@ pub fn start() -> std::result::Result<(), JsValue> {
     }
     for id in ["open-file", "font-file"] {
         listen(id, "change", move |_| begin_file(id))?;
+    }
+    listen("preset", "change", move |_| report(apply_preset()))?;
+    // Changing a setting by hand leaves the preset behind.
+    for id in [
+        "ramp",
+        "dither",
+        "edges",
+        "edge-glyphs",
+        "gamma",
+        "contrast",
+    ] {
+        listen(id, "input", move |_| {
+            report(node::<HtmlSelectElement>("preset").map(|preset| preset.set_value("custom")))
+        })?;
     }
     media::start()?;
     let fonts = node::<Element>("font").map_err(|e| JsValue::from_str(&e))?;
@@ -994,6 +1008,29 @@ fn begin_file(id: &'static str) {
         }
     });
 }
+/// Fill the conversion settings from the chosen preset. Inversion stays as it is: that suits
+/// the page the text will sit on, not the picture.
+fn apply_preset() -> Result<()> {
+    let (ramp, dither, lines, contrast) = match select("preset")?.as_str() {
+        "standard" => (RAMPS[0].1, false, false, "1"),
+        "photo" => (RAMPS[1].1, true, false, "1"),
+        "line-art" => (RAMPS[0].1, false, true, "1"),
+        "poster" => (RAMPS[2].1, false, false, "1.5"),
+        "custom" => return Ok(()),
+        _ => return Err("Unknown conversion preset".into()),
+    };
+    input("ramp")?.set_value(ramp);
+    input("dither")?.set_checked(dither);
+    input("edges")?.set_checked(lines);
+    input("edge-glyphs")?.set_checked(lines);
+    input("gamma")?.set_value("1");
+    input("contrast")?.set_value(contrast);
+    status(
+        "Preset applied. Convert a file, video or camera to use it.",
+        false,
+    );
+    Ok(())
+}
 /// Validated conversion settings shared by image, video and camera input.
 fn render_options() -> Result<RenderOptions> {
     let options = RenderOptions {
@@ -1007,6 +1044,7 @@ fn render_options() -> Result<RenderOptions> {
         invert: checked("invert")?,
         dither: checked("dither")?,
         edges: checked("edges")?,
+        edge_glyphs: checked("edge-glyphs")?,
         gamma: decimal("gamma")?,
         contrast: decimal("contrast")?,
         ..RenderOptions::default()

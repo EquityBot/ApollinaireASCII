@@ -20,6 +20,7 @@ enum Tool {
     Eraser,
     Line,
     Rectangle,
+    Ellipse,
     Fill,
     Type,
     Area,
@@ -33,6 +34,7 @@ impl Tool {
             "eraser" => Self::Eraser,
             "line" => Self::Line,
             "rectangle" => Self::Rectangle,
+            "ellipse" => Self::Ellipse,
             "fill" => Self::Fill,
             "type" => Self::Type,
             "area" => Self::Area,
@@ -54,6 +56,9 @@ impl Tool {
             }
             Self::Rectangle => {
                 "Rectangle: drag between opposite corners. Keyboard: Space, arrow keys, then Space. Diagram mode draws a box labelled with the text field."
+            }
+            Self::Ellipse => {
+                "Ellipse: drag between opposite corners of its box. Keyboard: Space, arrow keys, then Space."
             }
             Self::Fill => {
                 "Fill: replace the touching run of one character. Keyboard: arrow keys move; Space fills."
@@ -105,6 +110,20 @@ fn brush() -> Result<u8> {
 }
 fn label() -> Result<String> {
     Ok(input("stamp")?.value())
+}
+/// The corner a rectangle or ellipse reaches for a drag. With the constraint on, it is the
+/// largest box inside the drag that looks square: cells are about twice as tall as wide, so it
+/// spans 2 columns for each row.
+fn shape_end(start: (i32, i32), end: (i32, i32)) -> Result<(i32, i32)> {
+    if !checked("constrain")? {
+        return Ok(end);
+    }
+    let (columns, rows) = (end.0 - start.0, end.1 - start.1);
+    let span = rows.abs().min(columns.abs() / 2);
+    Ok((
+        start.0 + 2 * span * columns.signum(),
+        start.1 + span * rows.signum(),
+    ))
 }
 fn toggle(id: &str, attribute: &str, on: bool) -> Result<()> {
     let element = node::<Element>(id)?;
@@ -376,11 +395,15 @@ impl App {
             }
             Tool::Line => canvas.line(start, point, brush()?)?,
             Tool::Rectangle if checked("diagram")? => {
-                canvas.diagram_box(start, point, &label()?)?
+                canvas.diagram_box(start, shape_end(start, point)?, &label()?)?
             }
             Tool::Rectangle => {
-                let (x, y, width, height) = bounds(start, point);
+                let (x, y, width, height) = bounds(start, shape_end(start, point)?);
                 canvas.rectangle(x, y, width, height, brush()?)?
+            }
+            Tool::Ellipse => {
+                let (x, y, width, height) = bounds(start, shape_end(start, point)?);
+                canvas.ellipse(x, y, width, height, brush()?)?
             }
             Tool::Area => match &stroke.lifted {
                 Some((contents, (x, y, width, height))) => {
@@ -429,7 +452,8 @@ impl App {
         let message = match self.drawing.tool {
             Tool::Area => "Area moved.",
             Tool::Rectangle if checked("diagram")? => {
-                let (_, _, width, height) = bounds(stroke.start, stroke.last);
+                let end = shape_end(stroke.start, stroke.last)?;
+                let (_, _, width, height) = bounds(stroke.start, end);
                 let text = label()?;
                 if !text.is_empty() && (text.len() + 2 > width || height < 3) {
                     "Box drawn. Make it larger to show the whole label."

@@ -53,11 +53,14 @@
           <summary>Convert an image, video or camera</summary>
           <p>Files and camera frames stay in your browser. Only characters are displayed or exported.</p>
           <label for="media-file">Image or animated GIF (up to 16 MiB)</label><input id="media-file" type="file" accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.ppm,.pgm,.pnm">
+          <label for="preset">Preset</label>
+          <select id="preset"><option value="standard">Standard</option><option value="photo">Photo detail</option><option value="line-art">Line art</option><option value="poster">Poster</option><option value="custom">Custom settings</option></select>
           <label for="ramp">Characters, from light to dense</label><input id="ramp" type="text" value=" .:-=+*#%@" maxlength="256">
           <label class="check"><input id="auto-height" type="checkbox" checked> Preserve aspect ratio</label>
           <label class="check"><input id="invert" type="checkbox"> Invert light and dark</label>
           <label class="check"><input id="dither" type="checkbox"> Dither tones</label>
           <label class="check"><input id="edges" type="checkbox"> Trace edges</label>
+          <label class="check"><input id="edge-glyphs" type="checkbox"> Trace edges with | / - \ along their direction</label>
           <div class="pair"><div><label for="gamma">Gamma</label><input id="gamma" type="number" min="0.1" max="5" step="0.1" value="1"></div><div><label for="contrast">Contrast</label><input id="contrast" type="number" min="0.1" max="5" step="0.1" value="1"></div></div>
           <button id="convert" type="button" disabled>Convert selected file</button>
           <h3>Video or camera</h3>
@@ -84,6 +87,7 @@
           <label class="check"><input type="radio" name="tool" value="eraser"> Eraser</label>
           <label class="check"><input type="radio" name="tool" value="line"> Line</label>
           <label class="check"><input type="radio" name="tool" value="rectangle"> Rectangle</label>
+          <label class="check"><input type="radio" name="tool" value="ellipse"> Ellipse</label>
           <label class="check"><input type="radio" name="tool" value="fill"> Fill</label>
           <label class="check"><input type="radio" name="tool" value="type"> Type</label>
           <label class="check"><input type="radio" name="tool" value="area"> Select area</label>
@@ -101,6 +105,7 @@
            <button id="save-stamp" type="button" disabled>Save area as stamp</button>
            <button id="delete-stamp" type="button" disabled>Remove saved stamp</button>
            <label class="check"><input id="stamp-transparent" type="checkbox" checked> Skip spaces when stamping art</label>
+          <label class="check"><input id="constrain" type="checkbox"> Keep rectangles square and ellipses round</label>
           <label class="check"><input id="diagram" type="checkbox"> Diagram mode: boxes and connectors</label>
           <label class="check"><input id="arrow" type="checkbox" checked> Arrowheads on connectors</label>
           <label class="check"><input id="onion-skin" type="checkbox"> Onion skin: show the previous frame</label>
