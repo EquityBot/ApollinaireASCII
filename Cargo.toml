@@ -5,8 +5,8 @@ edition = "2024"
 rust-version = "1.99"
 license = "MIT"
 description = "Static art, block lettering and animation as real ASCII text"
-repository = "https://github.com/EquityBot/ApollinaireASCII"
-homepage = "https://equitybot.github.io/ApollinaireASCII/"
+repository = "https://github.com/yungSNAT/ApollinaireASCII"
+homepage = "https://yungsnat.github.io/ApollinaireASCII/"
 readme = "README.md"
 categories = ["command-line-utilities", "multimedia::images", "text-processing", "wasm"]
 # notices.rs checks web/, which the package leaves out.

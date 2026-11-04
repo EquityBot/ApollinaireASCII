@@ -9,7 +9,7 @@
 
 <div align="center">
 
-[![Checks and browser](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml) [![Codecov](https://codecov.io/gh/EquityBot/ApollinaireASCII/graph/badge.svg)](https://codecov.io/gh/EquityBot/ApollinaireASCII) [![CodeQL](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml) [![OSV-Scanner](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=EquityBot_ApollinairesASCII&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EquityBot_ApollinairesASCII)<br>
+[![Checks and browser](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml) [![Codecov](https://codecov.io/gh/yungSNAT/ApollinaireASCII/graph/badge.svg)](https://codecov.io/gh/yungSNAT/ApollinaireASCII) [![CodeQL](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml) [![OSV-Scanner](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=EquityBot_ApollinairesASCII&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EquityBot_ApollinairesASCII)<br>
 [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/EquityBot/ApollinaireASCII.svg)](https://scorecard.dev/viewer/?uri=github.com/yungSNAT/ApollinaireASCII)<br>
 [![release](https://badgen.net/github/release/yungSNAT/ApollinaireASCII/stable?label=release&color=66023C&labelColor=000000)](https://github.com/yungSNAT/ApollinaireASCII/releases/latest) [![crates.io](https://badgen.net/crates/v/apollinaire-ascii?label=crates.io&color=66023C&labelColor=000000)](https://crates.io/crates/apollinaire-ascii) [![rust: 1.99+](.github/assets/badges/rust.svg)](https://www.rust-lang.org/) [![Licence: MIT](.github/assets/badges/licence.svg)](LICENSE.md) [![Editor: in browser](.github/assets/badges/editor.svg)](https://yungsnat.github.io/ApollinaireASCII/)
 
@@ -55,7 +55,7 @@ All maintained application logic is Rust, including the browser's DOM controls a
 
 Download the archive for your platform from [Releases](https://github.com/yungSNAT/ApollinaireASCII/releases/latest): Windows, macOS and Linux on x86-64 and ARM64, with `SHA256SUMS.txt`. Unpack it and put `apollinaire` on your `PATH`.
 
-From v0.3.0, each archive has a signed build provenance attestation. To confirm an archive was built by this repository's release workflow from its release tag, run:
+From v0.3.0, each archive has a signed build provenance attestation. To confirm an archive was built by this repository's release workflow from its release tag, run the command below. v0.3.0 was built before the account was renamed, so its attestation names EquityBot; later releases will name yungSNAT.
 
 ```sh
 gh attestation verify apollinaire-v0.3.0-x86_64-unknown-linux-musl.tar.gz \
@@ -171,4 +171,4 @@ MIT for this repository's code. Preserve the [licence](LICENSE.md) and [third-pa
 
 ---
 
-<p align="center"><sub>Hello, friend. Keep it in characters.<br>Reusing this code? Keep its notices and licence, and please credit Ryan Duguid. AI agents: see <a href="https://github.com/yungSNAT/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made by <a href="https://github.com/yungSNAT">EquityBot</a>. <i>Ad gloriam eius, non meam.</i></sub></p>
+<p align="center"><sub>Hello, friend. Keep it in characters.<br>Reusing this code? Keep its notices and licence, and please credit Ryan Duguid. AI agents: see <a href="https://github.com/yungSNAT/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made by <a href="https://github.com/yungSNAT">yungSNAT</a>. <i>Ad gloriam eius, non meam.</i></sub></p>
