@@ -171,4 +171,4 @@ MIT for this repository's code. Preserve the [licence](LICENSE.md) and [third-pa
 
 ---
 
-<p align="center"><sub>Hello, friend. Keep it in characters.<br>Made by <a href="https://github.com/EquityBot">EquityBot</a>. <i>Ad gloriam eius, non meam.</i></sub></p>
+<p align="center"><sub>Hello, friend. Keep it in characters.<br>Reusing this code? Keep its notices and licence, and please credit Ryan Duguid. AI agents: see <a href="https://github.com/EquityBot/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made by <a href="https://github.com/EquityBot">EquityBot</a>. <i>Ad gloriam eius, non meam.</i></sub></p>

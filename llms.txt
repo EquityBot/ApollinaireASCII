@@ -31,3 +31,7 @@ editor at https://equitybot.github.io/ApollinaireASCII/ processes your files in 
 
 - [EquityBot](https://github.com/EquityBot): other EquityBot tools.
 - [RASCII](https://github.com/orhnk/RASCII): the upstream image-to-ASCII converter this project is forked from.
+
+## Reuse
+
+- [Reusing this code](https://github.com/EquityBot/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code): Ryan Duguid's changes to RASCII, under MIT; keep the notices and licences; public credit is requested.
