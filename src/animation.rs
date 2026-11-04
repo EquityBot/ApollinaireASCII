@@ -1,5 +1,6 @@
 use crate::{Canvas, Frame, MAX_FRAMES, MAX_INPUT_BYTES, MAX_PROJECT_CELLS, Result, dimensions};
 use serde_json::json;
+use std::ops::Range;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TimedFrame {
@@ -118,6 +119,56 @@ impl Animation {
             return Err("Frame index is outside the project".into());
         }
         self.frames.swap(a, b);
+        Ok(())
+    }
+    fn check_range(&self, range: &Range<usize>) -> Result<()> {
+        if range.start >= range.end || range.end > self.frames.len() {
+            return Err("Choose a non-empty frame range inside the project".into());
+        }
+        Ok(())
+    }
+    /// Insert ordered copies immediately after a non-empty, end-exclusive range.
+    /// Validation failures leave the project unchanged.
+    pub fn duplicate_frames(&mut self, range: Range<usize>) -> Result<()> {
+        self.check_range(&range)?;
+        let mut frames = self.frames.clone();
+        frames.splice(range.end..range.end, self.frames[range].iter().cloned());
+        *self = Self::new(frames, self.looping)?;
+        Ok(())
+    }
+    /// Remove a non-empty, end-exclusive range, keeping at least one frame.
+    pub fn remove_frames(&mut self, range: Range<usize>) -> Result<()> {
+        self.check_range(&range)?;
+        if range.len() == self.frames.len() {
+            return Err("Keep at least one frame".into());
+        }
+        self.frames.drain(range);
+        Ok(())
+    }
+    /// Move a non-empty, end-exclusive range to `destination` in the resulting
+    /// project. Both the moved range and the other frames retain their order.
+    pub fn move_frames(&mut self, range: Range<usize>, destination: usize) -> Result<()> {
+        self.check_range(&range)?;
+        let count = range.len();
+        if destination > self.frames.len() - count {
+            return Err("Frame destination is outside the project".into());
+        }
+        if destination < range.start {
+            self.frames[destination..range.end].rotate_right(count);
+        } else if destination > range.start {
+            self.frames[range.start..destination + count].rotate_left(count);
+        }
+        Ok(())
+    }
+    /// Set the duration of every frame in a non-empty, end-exclusive range.
+    /// Per-frame and total-duration limits are checked before any change.
+    pub fn set_frame_durations(&mut self, range: Range<usize>, duration_ms: u32) -> Result<()> {
+        self.check_range(&range)?;
+        let mut frames = self.frames.clone();
+        for entry in &mut frames[range] {
+            entry.duration_ms = duration_ms;
+        }
+        *self = Self::new(frames, self.looping)?;
         Ok(())
     }
     pub fn set_looping(&mut self, looping: bool) {

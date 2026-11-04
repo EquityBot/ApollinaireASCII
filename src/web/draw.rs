@@ -408,6 +408,10 @@ impl App {
         Ok(())
     }
     fn finish(&mut self) -> Result<()> {
+        if self.recovery.locked {
+            self.drawing_cancel();
+            return Err("Wait for the recovery operation to finish.".into());
+        }
         let Some(stroke) = self.drawing.stroke.take() else {
             return Ok(());
         };
@@ -477,6 +481,7 @@ impl App {
                 },
             )?;
             self.modified = true;
+            self.recovery.changed();
             self.display(true)?;
         } else {
             self.update_frame(frame, self.duration())?;

@@ -123,6 +123,13 @@
           <button id="download-json" type="button" disabled>Save project .json</button>
           <button id="download-html" type="button" disabled>Save player .html</button>
         </div>
+        <details id="recovery-panel">
+          <summary>Local project recovery</summary>
+          <label class="check"><input id="recovery-enabled" type="checkbox" disabled> Keep applied project edits in this browser</label>
+          <p id="recovery-status" role="status" aria-live="polite">Checking for saved recovery...</p>
+          <div class="actions"><button id="restore-recovery" type="button" disabled>Restore saved project</button><button id="discard-recovery" type="button" disabled>Discard saved recovery</button></div>
+          <p class="hint">Recovery is off on each page load. Enabling it stores applied artwork and timings locally. Unapplied text edits, session stamps and undo history are excluded. Browser clearing or eviction can remove it; save JSON for a separate copy. Another tab changing the saved record stops recovery in this tab.</p>
+        </details>
         <details id="effect-panel">
           <summary>Animate this frame with an effect</summary>
           <p>Builds a new animation from the selected frame. Undo restores the previous project.</p>
@@ -138,7 +145,14 @@
           <label for="editor">Selected frame</label><textarea id="editor" class="ascii-editor" rows="10" wrap="off" spellcheck="false"></textarea>
           <label for="duration">Frame duration (milliseconds)</label><input id="duration" type="number" min="10" max="60000" step="10" value="50">
           <div class="actions"><button id="apply" class="primary" type="button">Apply edits</button><button id="discard" type="button">Discard edits</button></div>
-          <div class="actions"><button id="add-frame" type="button">Add blank frame</button><button id="duplicate" type="button">Duplicate frame</button><button id="delete-frame" type="button">Delete frame</button><button id="move-left" type="button">Move earlier</button><button id="move-right" type="button">Move later</button></div>
+          <div class="actions"><button id="add-frame" type="button">Add blank frame</button></div>
+          <div class="pair"><div><label for="range-first">First selected frame</label><input id="range-first" type="number" min="1" value="1"></div><div><label for="range-last">Last selected frame</label><input id="range-last" type="number" min="1" value="1"></div></div>
+          <div class="actions"><button id="select-range" type="button">Select frame range</button></div>
+          <p id="range-count" role="status">Selected frames 1 to 1 (1 frame)</p>
+          <p class="hint">Frame numbers include both ends. Seeking selects one frame; playback keeps your range. Each range operation is one undo step.</p>
+          <div class="actions"><button id="duplicate" type="button">Duplicate range</button><button id="delete-frame" type="button">Delete range</button><button id="move-left" type="button">Move earlier</button><button id="move-right" type="button">Move later</button></div>
+          <label for="range-duration">Range duration per frame (milliseconds)</label><input id="range-duration" type="number" min="10" max="60000" step="10" value="100">
+          <div class="actions"><button id="apply-range-duration" type="button">Apply duration to range</button></div>
           <div class="actions"><button id="flip-horizontal" type="button">Flip columns</button><button id="flip-vertical" type="button">Flip rows</button></div>
            <label class="check"><input id="mirror-glyphs" type="checkbox"> Mirror directional characters when flipping</label>
            <p class="hint">Horizontal mirrors swap slash and bracket pairs. Vertical mirrors swap slashes and ^/v arrowheads; leave this off when v is text.</p>

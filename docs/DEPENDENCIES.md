@@ -30,4 +30,6 @@ ApollinaireASCII replaced `figlet-rs` 1.0.0 with its own FIGlet renderer on 1 No
 
 ## Source scan
 
+On 3 November 2026, Aikido rescanned Cargo.toml and Cargo.lock after adding browser API bindings for local recovery. It reported only the existing `moxcms` 0.8.1 alert, `AIKIDO-2026-175889`; dependency versions and the lockfile were unchanged. The source scan of 8 files covering recovery, frame ranges and their integration reported zero issues and zero skipped paths. No alert was ignored or snoozed.
+
 Aikido scanned the 11 Rust source files, browser HTML/CSS and 2 GitHub configuration files: 15 files, zero issues and zero skipped paths. This automated result complements the contract tests and independent code reviews; it is not an assurance that every possible defect was found.
