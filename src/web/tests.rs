@@ -103,6 +103,7 @@ fn blank(width: usize, height: usize) {
     check("onion-skin", false);
     check("mirror-glyphs", false);
     check("stamp-transparent", true);
+    check("constrain", false);
     check("border", false);
     set_value("brush", "#");
     set_value("stamp", "");
@@ -447,6 +448,104 @@ fn rectangle_draws_by_pointer_and_keyboard() {
 }
 
 #[wasm_bindgen_test]
+fn ellipse_draws_by_pointer_and_keyboard() {
+    blank(11, 5);
+    tool("ellipse");
+    // Corners in either order give the same outline.
+    drag(&[(4, 2), (0, 0)]);
+    let first = rows(&[
+        " ###       ",
+        "#   #      ",
+        " ###       ",
+        "           ",
+        "           ",
+    ]);
+    assert_eq!(art(), first);
+    set_value("brush", "o");
+    cursor_to((6, 2));
+    keys(&[
+        " ",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowDown",
+        "ArrowDown",
+        " ",
+    ]);
+    assert_eq!(
+        art(),
+        rows(&[
+            " ###       ",
+            "#   #      ",
+            " ###   ooo ",
+            "      o   o",
+            "       ooo ",
+        ])
+    );
+    click("undo");
+    assert_eq!(art(), first);
+}
+
+#[wasm_bindgen_test]
+fn constraint_keeps_shapes_square_inside_the_drag_by_pointer_and_keyboard() {
+    blank(12, 5);
+    check("constrain", true);
+    tool("ellipse");
+    drag(&[(0, 0), (9, 4)]);
+    assert_eq!(
+        art(),
+        rows(&[
+            "  #####     ",
+            "##     ##   ",
+            "#       #   ",
+            "##     ##   ",
+            "  #####     ",
+        ])
+    );
+    click("undo");
+    // The shape stays anchored at the start, whichever way the drag leaves it.
+    tool("rectangle");
+    drag(&[(11, 4), (4, 0)]);
+    assert_eq!(
+        art(),
+        rows(&[
+            "            ",
+            "     #######",
+            "     #     #",
+            "     #     #",
+            "     #######",
+        ])
+    );
+    click("undo");
+    cursor_to((1, 0));
+    keys(&[
+        " ",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowDown",
+        " ",
+    ]);
+    assert_eq!(
+        art(),
+        rows(&[
+            " ###        ",
+            " ###        ",
+            "            ",
+            "            ",
+            "            ",
+        ])
+    );
+    click("undo");
+    // A diagram box judges its label against the box it drew, not the drag.
+    check("diagram", true);
+    set_value("stamp", "Hello");
+    drag(&[(0, 0), (11, 2)]);
+    assert!(status().contains("Make it larger"), "{}", status());
+}
+
+#[wasm_bindgen_test]
 fn fill_replaces_the_touching_run_by_pointer_and_keyboard() {
     blank(7, 5);
     tool("rectangle");
@@ -726,6 +825,25 @@ async fn wait_for(mut condition: impl FnMut() -> bool) {
         wasm_bindgen_futures::JsFuture::from(tick).await.unwrap();
     }
     panic!("Timed out waiting for the editor: {}", status());
+}
+/// Convert a picture with the image control as a user would, then wait for the read to finish.
+async fn convert(contents: &str) {
+    let file =
+        web_sys::File::new_with_str_sequence(&js_sys::Array::of1(&contents.into()), "step.pgm")
+            .unwrap();
+    let data = DataTransfer::new().unwrap();
+    data.items().add_with_file(&file).unwrap();
+    element::<HtmlInputElement>("media-file").set_files(data.files().as_ref());
+    click("convert");
+    wait_for(|| !status().starts_with("Reading")).await;
+    assert!(status().contains("File opened"), "{}", status());
+}
+fn preset(name: &str) {
+    let picker = element::<HtmlSelectElement>("preset");
+    picker.set_value(name);
+    picker
+        .dispatch_event(&web_sys::Event::new("change").unwrap())
+        .unwrap();
 }
 /// Choose a file in the Open control as a user would, then wait for the read to finish.
 async fn open(name: &str, contents: &str) -> String {
@@ -1143,6 +1261,56 @@ async fn discard_removes_a_corrupt_object_record_but_not_a_newer_one() {
     assert!(super::recovery::read_record().await.unwrap().is_undefined());
     // Leave the slot as this tab last observed it for the other browser cases.
     replace_saved_record(marker).await;
+}
+
+#[wasm_bindgen_test]
+async fn presets_fill_the_conversion_settings_and_reach_the_output() {
+    const STEP: &str = "P2\n5 1\n255\n0 0 0 255 255\n";
+    let settings = || {
+        (
+            element::<HtmlInputElement>("ramp").value(),
+            element::<HtmlInputElement>("dither").checked(),
+            element::<HtmlInputElement>("edges").checked(),
+            element::<HtmlInputElement>("edge-glyphs").checked(),
+            element::<HtmlInputElement>("gamma").value(),
+            element::<HtmlInputElement>("contrast").value(),
+        )
+    };
+    let chosen = || element::<HtmlSelectElement>("preset").value();
+    blank(5, 1);
+    let standard = settings();
+    assert_eq!(chosen(), "standard", "the page starts on its own defaults");
+    convert(STEP).await;
+    assert_eq!(art(), "   @@");
+
+    preset("line-art");
+    assert!(status().contains("Preset applied"), "{}", status());
+    convert(STEP).await;
+    assert_eq!(art(), "  || ");
+    // The options stay independent: direction alone traces edges, and edges alone use the ramp.
+    check("edges", false);
+    assert_eq!(chosen(), "custom", "a changed setting leaves the preset");
+    convert(STEP).await;
+    assert_eq!(art(), "  || ");
+    check("edges", true);
+    check("edge-glyphs", false);
+    convert(STEP).await;
+    assert_eq!(art(), "  @@ ");
+
+    preset("photo");
+    assert_eq!(settings().0, crate::image_renderer::RAMPS[1].1);
+    assert!(settings().1 && !settings().2 && !settings().3);
+    preset("poster");
+    assert_eq!(settings().0, crate::image_renderer::RAMPS[2].1);
+    assert_eq!(settings().5, "1.5");
+    // Choosing Custom keeps what is there; every other preset is a full set of values.
+    input_event("ramp", " .#");
+    assert_eq!(chosen(), "custom");
+    let edited = settings();
+    preset("custom");
+    assert_eq!(settings(), edited);
+    preset("standard");
+    assert_eq!(settings(), standard);
 }
 
 #[wasm_bindgen_test]

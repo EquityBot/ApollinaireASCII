@@ -31,6 +31,36 @@ fn get_reads_cells_and_reports_outside_as_none() {
 }
 
 #[test]
+fn ellipse_outlines_are_symmetrical_at_odd_and_even_sizes() {
+    let mut grid = blank(9, 5);
+    grid.ellipse(0, 0, 9, 5, b'#').unwrap();
+    assert_eq!(
+        text(grid),
+        "  #####  \n##     ##\n#       #\n##     ##\n  #####  "
+    );
+    let mut grid = blank(6, 4);
+    grid.ellipse(0, 0, 6, 4, b'o').unwrap();
+    assert_eq!(text(grid), " oooo \no    o\no    o\n oooo ");
+}
+
+#[test]
+fn ellipse_collapses_to_a_line_or_cell_clips_and_validates() {
+    let mut grid = blank(5, 3);
+    grid.ellipse(1, 1, 3, 1, b'-').unwrap();
+    grid.ellipse(0, 0, 1, 3, b'|').unwrap();
+    grid.ellipse(4, 2, 1, 1, b'.').unwrap();
+    assert_eq!(text(grid), "|    \n|--- \n|   .");
+    let mut grid = blank(4, 3);
+    grid.ellipse(-2, -1, 5, 3, b'#').unwrap();
+    assert_eq!(text(grid), "  # \n##  \n    ");
+    let mut grid = blank(2, 2);
+    grid.ellipse(i32::MAX, i32::MIN, 3, 3, b'#').unwrap();
+    assert_eq!(text(grid), "  \n  ");
+    assert!(blank(2, 2).ellipse(0, 0, 0, 1, b'#').is_err());
+    assert!(blank(2, 2).ellipse(0, 0, 1, 1, b'\n').is_err());
+}
+
+#[test]
 fn fill_area_is_solid_clipped_and_validated() {
     let mut grid = blank(4, 3);
     grid.fill_area(-1, 1, 3, 9, b'#').unwrap();

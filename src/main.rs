@@ -119,6 +119,9 @@ enum Command {
         dither: bool,
         #[arg(long)]
         edges: bool,
+        /// Trace edges, drawing strong ones as | / - \ along their direction.
+        #[arg(long)]
+        edge_glyphs: bool,
         #[arg(long, default_value_t = 1.0)]
         gamma: f64,
         #[arg(long, default_value_t = 1.0)]
@@ -306,6 +309,7 @@ fn run(args: Args) -> Result<()> {
             invert,
             dither,
             edges,
+            edge_glyphs,
             gamma,
             contrast,
             cell_aspect,
@@ -322,6 +326,7 @@ fn run(args: Args) -> Result<()> {
                 invert,
                 dither,
                 edges,
+                edge_glyphs,
                 gamma,
                 contrast,
                 cell_aspect,

@@ -171,6 +171,25 @@ fn list_searches_tags_and_effects_animate_files_and_stdin() {
     std::fs::remove_dir_all(dir).unwrap();
 }
 #[test]
+fn image_edge_glyphs_draw_direction_and_edges_alone_keep_the_ramp() {
+    let dir = scratch("edge-glyphs");
+    let path = dir.join("step.png");
+    image::RgbaImage::from_fn(4, 1, |x, _| {
+        image::Rgba(if x < 2 { [0, 0, 0, 255] } else { [255; 4] })
+    })
+    .save(&path)
+    .unwrap();
+    let run = |flag: &str| {
+        let image = path.to_str().unwrap();
+        let output = cli(&["image", image, "--width", "4", "--height", "1", flag]);
+        assert!(output.status.success());
+        text(&output.stdout).to_string()
+    };
+    assert_eq!(run("--edges"), " @@ \n");
+    assert_eq!(run("--edge-glyphs"), " || \n");
+    std::fs::remove_dir_all(dir).unwrap();
+}
+#[test]
 fn image_batches_create_one_file_per_input_and_never_overwrite() {
     let dir = scratch("batch");
     let picture = |name: &str| {

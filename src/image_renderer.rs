@@ -6,6 +6,7 @@ use crate::{
     dimensions, printable,
 };
 use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader, Limits};
+use std::f64::consts::{FRAC_PI_4, PI};
 use std::io::Cursor;
 
 pub const RAMPS: &[(&str, &str)] = &[
@@ -17,6 +18,8 @@ pub const RAMPS: &[(&str, &str)] = &[
     ("simple", " .oO#"),
     ("binary", " #"),
 ];
+/// Edge strength, as a share of a full black-to-white step, that earns a direction character.
+const STRONG_EDGE: f64 = 0.25;
 #[derive(Clone, Debug)]
 pub struct RenderOptions {
     pub width: usize,
@@ -29,6 +32,9 @@ pub struct RenderOptions {
     pub background: u8,
     pub dither: bool,
     pub edges: bool,
+    /// Trace edges as `edges` does, drawing strong ones with `|`, `/`, `-` or `\` along their
+    /// direction instead of a ramp character.
+    pub edge_glyphs: bool,
 }
 impl Default for RenderOptions {
     fn default() -> Self {
@@ -43,6 +49,7 @@ impl Default for RenderOptions {
             background: 0,
             dither: false,
             edges: false,
+            edge_glyphs: false,
         }
     }
 }
@@ -96,7 +103,8 @@ pub fn render_image(resource: &DynamicImage, options: &RenderOptions) -> Result<
             gray * alpha + options.background as f64 / 255.0 * (1.0 - alpha)
         })
         .collect();
-    if options.edges {
+    let mut glyphs = vec![None; count];
+    if options.edges || options.edge_glyphs {
         let original = values.clone();
         for y in 0..height {
             for x in 0..options.width {
@@ -112,7 +120,11 @@ pub fn render_image(resource: &DynamicImage, options: &RenderOptions) -> Result<
                     + sample(-1, 1)
                     + 2.0 * sample(0, 1)
                     + sample(1, 1);
-                values[y * options.width + x] = (gx.hypot(gy) / 4.0).min(1.0);
+                let strength = (gx.hypot(gy) / 4.0).min(1.0);
+                values[y * options.width + x] = strength;
+                if options.edge_glyphs && strength >= STRONG_EDGE {
+                    glyphs[y * options.width + x] = Some(edge_glyph(gx, gy));
+                }
             }
         }
     }
@@ -129,7 +141,7 @@ pub fn render_image(resource: &DynamicImage, options: &RenderOptions) -> Result<
     for index in 0..count {
         let value = values[index].clamp(0.0, 1.0);
         let selected = (value * (ramp.len() - 1) as f64).round() as usize;
-        cells.push(ramp[selected]);
+        cells.push(glyphs[index].unwrap_or(ramp[selected]));
         if options.dither {
             let error = value - selected as f64 / (ramp.len() - 1) as f64;
             let x = index % options.width;
@@ -149,6 +161,13 @@ pub fn render_image(resource: &DynamicImage, options: &RenderOptions) -> Result<
         }
     }
     Frame::new(options.width, height, cells)
+}
+/// The character running along an edge, which lies across its brightness gradient.
+/// Angles stay in cells rather than pixels because `/` and `\` are the diagonals of a cell.
+fn edge_glyph(gx: f64, gy: f64) -> u8 {
+    // A gradient and its opposite mark the same edge, so half a turn covers every direction.
+    let eighths = (gy.atan2(gx).rem_euclid(PI) / FRAC_PI_4).round() as usize;
+    b"|/-\\"[eighths % 4]
 }
 pub(crate) fn check_pixels(width: u32, height: u32) -> Result<()> {
     if width == 0
