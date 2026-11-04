@@ -11,7 +11,7 @@
 
 [![Checks and browser](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/checks.yml) [![Codecov](https://codecov.io/gh/EquityBot/ApollinaireASCII/graph/badge.svg)](https://codecov.io/gh/EquityBot/ApollinaireASCII) [![CodeQL](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/codeql.yml) [![OSV-Scanner](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml/badge.svg?branch=master)](https://github.com/yungSNAT/ApollinaireASCII/actions/workflows/osv-scanner.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=EquityBot_ApollinairesASCII&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EquityBot_ApollinairesASCII)<br>
 [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/EquityBot/ApollinaireASCII.svg)](https://scorecard.dev/viewer/?uri=github.com/yungSNAT/ApollinaireASCII)<br>
-[![release](https://badgen.net/github/release/yungSNAT/ApollinaireASCII/stable?label=release&color=66023C&labelColor=000000)](https://github.com/yungSNAT/ApollinaireASCII/releases/latest) [![crates.io](https://badgen.net/crates/v/apollinaire-ascii?label=crates.io&color=66023C&labelColor=000000)](https://crates.io/crates/apollinaire-ascii) [![rust: 1.99+](.github/assets/badges/rust.svg)](https://www.rust-lang.org/) [![Licence: MIT](.github/assets/badges/licence.svg)](LICENSE.md) [![Editor: in browser](.github/assets/badges/editor.svg)](https://equitybot.github.io/ApollinaireASCII/)
+[![release](https://badgen.net/github/release/yungSNAT/ApollinaireASCII/stable?label=release&color=66023C&labelColor=000000)](https://github.com/yungSNAT/ApollinaireASCII/releases/latest) [![crates.io](https://badgen.net/crates/v/apollinaire-ascii?label=crates.io&color=66023C&labelColor=000000)](https://crates.io/crates/apollinaire-ascii) [![rust: 1.99+](.github/assets/badges/rust.svg)](https://www.rust-lang.org/) [![Licence: MIT](.github/assets/badges/licence.svg)](LICENSE.md) [![Editor: in browser](.github/assets/badges/editor.svg)](https://yungsnat.github.io/ApollinaireASCII/)
 
 [What it does](#what-it-does) · [Run the CLI](#run-the-cli) · [Use the library](#use-the-library) · [Browser editor](#build-the-browser-editor) · [Alternatives](#when-to-choose-something-else) · [Licence](#foundation-and-licence)
 
@@ -23,7 +23,7 @@
 
 Static art, block letters and animated scenes made of real, selectable ASCII characters. The `apollinaire-ascii` Rust library and CLI share their rendering and validation code with the browser editor.
 
-[Open the browser editor](https://equitybot.github.io/ApollinaireASCII/) · [CLI guide](docs/CLI.md) · [Library example](examples/library.rs) · [API docs](https://docs.rs/apollinaire-ascii) · [crates.io](https://crates.io/crates/apollinaire-ascii) · [Research and provenance](docs/RESEARCH.md)
+[Open the browser editor](https://yungsnat.github.io/ApollinaireASCII/) · [CLI guide](docs/CLI.md) · [Library example](examples/library.rs) · [API docs](https://docs.rs/apollinaire-ascii) · [crates.io](https://crates.io/crates/apollinaire-ascii) · [Research and provenance](docs/RESEARCH.md)
 
 ```text
        .-.
