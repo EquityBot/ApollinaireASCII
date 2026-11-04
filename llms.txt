@@ -8,30 +8,30 @@
 The crate is `apollinaire-ascii` and the command is `apollinaire`. Install the CLI with
 `cargo install --locked apollinaire-ascii`, or download a release archive for Windows, macOS or Linux
 on x86-64 or ARM64 with `SHA256SUMS.txt` (from v0.3.0 also build provenance attestations). The browser
-editor at https://equitybot.github.io/ApollinaireASCII/ processes your files in the browser and uploads nothing.
+editor at https://yungsnat.github.io/ApollinaireASCII/ processes your files in the browser and uploads nothing.
 
 ## Start
 
-- [README](https://github.com/EquityBot/ApollinaireASCII#readme): features, CLI and library quick start, browser build and checks.
-- [CLI guide](https://github.com/EquityBot/ApollinaireASCII/blob/master/docs/CLI.md): commands and examples.
-- [Library example](https://github.com/EquityBot/ApollinaireASCII/blob/master/examples/library.rs): drawing, a generated scene and a JSON round trip.
-- [Browser editor](https://equitybot.github.io/ApollinaireASCII/): drawing tools, diagram mode, lettering, effects, and image, video and camera conversion.
+- [README](https://github.com/yungSNAT/ApollinaireASCII#readme): features, CLI and library quick start, browser build and checks.
+- [CLI guide](https://github.com/yungSNAT/ApollinaireASCII/blob/master/docs/CLI.md): commands and examples.
+- [Library example](https://github.com/yungSNAT/ApollinaireASCII/blob/master/examples/library.rs): drawing, a generated scene and a JSON round trip.
+- [Browser editor](https://yungsnat.github.io/ApollinaireASCII/): drawing tools, diagram mode, lettering, effects, and image, video and camera conversion.
 
 ## Docs
 
-- [Text and project format](https://github.com/EquityBot/ApollinaireASCII/blob/master/docs/FORMAT.md): the frame and JSON project formats, fonts and resource limits.
-- [Validation](https://github.com/EquityBot/ApollinaireASCII/blob/master/docs/VALIDATION.md): checks run, reference comparisons with figlet and known limits.
-- [Dependency scan](https://github.com/EquityBot/ApollinaireASCII/blob/master/docs/DEPENDENCIES.md): dependency alerts, reachability and the in-house GIF decoder.
-- [Research and provenance](https://github.com/EquityBot/ApollinaireASCII/blob/master/docs/RESEARCH.md): the projects compared and why RASCII was chosen as the foundation.
-- [Third-party notices](https://github.com/EquityBot/ApollinaireASCII/blob/master/THIRD_PARTY_NOTICES.md): upstream code, font and dependency licences.
-- [CONTRIBUTING.md](https://github.com/EquityBot/ApollinaireASCII/blob/master/CONTRIBUTING.md): the ASCII contract, reuse rules and checks.
-- [SECURITY.md](https://github.com/EquityBot/ApollinaireASCII/blob/master/SECURITY.md): reporting a vulnerability privately.
+- [Text and project format](https://github.com/yungSNAT/ApollinaireASCII/blob/master/docs/FORMAT.md): the frame and JSON project formats, fonts and resource limits.
+- [Validation](https://github.com/yungSNAT/ApollinaireASCII/blob/master/docs/VALIDATION.md): checks run, reference comparisons with figlet and known limits.
+- [Dependency scan](https://github.com/yungSNAT/ApollinaireASCII/blob/master/docs/DEPENDENCIES.md): dependency alerts, reachability and the in-house GIF decoder.
+- [Research and provenance](https://github.com/yungSNAT/ApollinaireASCII/blob/master/docs/RESEARCH.md): the projects compared and why RASCII was chosen as the foundation.
+- [Third-party notices](https://github.com/yungSNAT/ApollinaireASCII/blob/master/THIRD_PARTY_NOTICES.md): upstream code, font and dependency licences.
+- [CONTRIBUTING.md](https://github.com/yungSNAT/ApollinaireASCII/blob/master/CONTRIBUTING.md): the ASCII contract, reuse rules and checks.
+- [SECURITY.md](https://github.com/yungSNAT/ApollinaireASCII/blob/master/SECURITY.md): reporting a vulnerability privately.
 
 ## Related
 
-- [EquityBot](https://github.com/EquityBot): other EquityBot tools.
+- [yungSNAT](https://github.com/yungSNAT): other yungSNAT tools.
 - [RASCII](https://github.com/orhnk/RASCII): the upstream image-to-ASCII converter this project is forked from.
 
 ## Reuse
 
-- [Reusing this code](https://github.com/EquityBot/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code): Ryan Duguid's changes to RASCII, under MIT; keep the notices and licences; public credit is requested.
+- [Reusing this code](https://github.com/yungSNAT/ApollinaireASCII/blob/master/AGENTS.md#reusing-this-code): Ryan Duguid's changes to RASCII, under MIT; keep the notices and licences; public credit is requested.

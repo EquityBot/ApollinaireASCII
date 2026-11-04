@@ -3,10 +3,10 @@ message: "If you use this work, cite it with this metadata and the release tag o
 title: "ApollinaireASCII"
 type: software
 authors:
-  - name: "EquityBot"
+  - name: "yungSNAT"
 abstract: "A Rust library, CLI and browser editor for static ASCII art, block lettering and animation in real, selectable characters. A fork of RASCII."
-repository-code: "https://github.com/EquityBot/ApollinaireASCII"
-url: "https://equitybot.github.io/ApollinaireASCII/"
+repository-code: "https://github.com/yungSNAT/ApollinaireASCII"
+url: "https://yungsnat.github.io/ApollinaireASCII/"
 license: MIT
 keywords:
   - ascii-animation
