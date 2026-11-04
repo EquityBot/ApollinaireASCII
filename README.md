@@ -70,7 +70,7 @@ To build from source instead, install [Rust](https://www.rust-lang.org/tools/ins
 cargo install --locked apollinaire-ascii
 ```
 
-For unreleased changes on `master`, use `cargo install --locked --git https://github.com/yungSNAT/ApollinaireASCII`.
+For unreleased changes on `master`, use `cargo install --locked --git https://github.com/yungSNAT/ApollinaireASCII apollinaire-ascii`.
 
 ```sh
 apollinaire art ghost
