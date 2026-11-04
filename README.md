@@ -45,7 +45,7 @@ Every frame contains bytes 32 through 126. Line feeds separate rows when saved a
 | Text effects | Reveal, typewriter, decrypt, scatter, wipes in 4 directions, rain, wave and burn, applied to any art or lettering, forwards or in reverse; set duration, FPS and seed |
 | Media conversion | PNG, JPEG, GIF, WebP, BMP and PNM input; animated GIF timing; custom character ramps, aspect correction, transparency, inversion, gamma, contrast, dithering and edges; CLI batches and `https://` URLs |
 | Video and camera | In the browser editor: any video the browser plays, sampled at 1 to 60 frames per second between chosen start and end times; a live text preview from the camera and timed recordings of 1 to 60 seconds |
-| Browser editor | Pencil, eraser, line, rectangle, fill, typing and area select/move/copy/paste on the character grid, each usable by keyboard; diagram mode for joined `+-|` boxes, labels and arrows; onion skin; select/copy text, timeline, per-frame timing, frame insertion/duplication/deletion/reordering, undo/redo and local file imports |
+| Browser editor | Pencil, eraser, line, rectangle, fill, typing, area select/move/copy/paste and reusable art stamps on the character grid, each usable by keyboard; optional directional ASCII mirrors; diagram mode for joined `+-|` boxes, labels and arrows; onion skin; select/copy text, timeline, per-frame timing, frame insertion/duplication/deletion/reordering, undo/redo and local file imports |
 | Export | Plain `.txt`, timed `.json` projects and standalone `.html` text players |
 | Native playback | Terminal playback with cursor movement; saved artwork remains plain text |
 
@@ -128,6 +128,10 @@ Serve `web/` with a local HTTP server and open its URL. Opening `index.html` dir
 The editor processes files in your browser. It has no upload endpoint, account system, analytics or external font request. The camera is requested only when you choose Camera on, and every camera track stops when you turn it off, finish a recording or hide or leave the page. Camera frames are never sent over the network. The library and editor make no network requests; only the CLI downloads, and only an `https://` image URL you pass to `apollinaire image`.
 
 Playback starts paused when reduced motion is requested and pauses when the page is hidden. Save JSON to keep all frames and their timings; text export saves the selected frame.
+
+To reuse part of a drawing, select an area and choose **Save area as stamp** under the drawing options. Choose **Stamp art**, pick a saved stamp and drag to preview its placement. Release to place it, or use Space, the arrow keys and Space again; Escape cancels. The space toggle chooses between transparent spaces and overwriting the destination. Stamps stay in memory for this session only, up to 16 distinct entries and 1,000,000 cells in total. They survive frame and project changes but are not included in saved JSON; placed artwork is saved normally.
+
+Flips move characters literally by default. Enable **Mirror directional characters when flipping** to reflect slash and bracket pairs horizontally, or slashes and `^`/`v` arrowheads vertically. Letters otherwise stay unchanged; leave the option off when `v` is text. The library exposes these choices through `Frame::mirror_horizontal` and `Frame::mirror_vertical`, alongside the existing literal flips.
 
 ## Checks
 

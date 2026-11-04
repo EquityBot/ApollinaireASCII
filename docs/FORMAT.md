@@ -29,7 +29,8 @@ All fields are required and no additional or duplicate fields are accepted. JSON
 | Video and camera sampling | 1 to 60 frames per second; camera recordings of 1 to 60 seconds |
 | Video and camera pixels read per frame | 2 per output column across, aspect preserved |
 | Custom font height / row length | 32 rows / 256 bytes |
-| Browser undo history | 20 states and 16,000,000 cells |
+| Browser undo history | 100 states and 16,000,000 cells |
+| Browser art stamp library | 16 distinct stamps and 1,000,000 cells in total; session memory only |
 
 Video and camera input in the browser is checked against the frame, cell and media dimension limits before any frame is read. Video files are not read into memory by the editor; the browser decodes them from a local object URL, and each sampled frame is drawn into an offscreen canvas only to read its pixels for the converter. Frame durations come from the sample times, rounded to milliseconds so they sum to the clip or recording length.
 

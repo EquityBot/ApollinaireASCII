@@ -87,6 +87,7 @@
           <label class="check"><input type="radio" name="tool" value="fill"> Fill</label>
           <label class="check"><input type="radio" name="tool" value="type"> Type</label>
           <label class="check"><input type="radio" name="tool" value="area"> Select area</label>
+          <label class="check"><input type="radio" name="tool" value="stamp-art"> Stamp art</label>
         </fieldset>
         <p id="tool-help" class="hint">Select text: drag across the artwork, then copy it.</p>
         <p class="hint">With the artwork focused, Ctrl+Z undoes and Ctrl+Y redoes every tool.</p>
@@ -96,11 +97,16 @@
           <div><label for="brush">Character</label><input id="brush" type="text" value="#" maxlength="1" autocomplete="off" spellcheck="false"></div>
           <div><label for="stamp">Text and box label</label><input id="stamp" type="text" value="" maxlength="128" autocomplete="off" spellcheck="false"></div>
           <button id="stamp-text" type="button" disabled>Stamp text</button>
+           <div><label for="art-stamp">Saved art stamp</label><select id="art-stamp" disabled><option>No stamps yet</option></select></div>
+           <button id="save-stamp" type="button" disabled>Save area as stamp</button>
+           <button id="delete-stamp" type="button" disabled>Remove saved stamp</button>
+           <label class="check"><input id="stamp-transparent" type="checkbox" checked> Skip spaces when stamping art</label>
           <label class="check"><input id="diagram" type="checkbox"> Diagram mode: boxes and connectors</label>
           <label class="check"><input id="arrow" type="checkbox" checked> Arrowheads on connectors</label>
           <label class="check"><input id="onion-skin" type="checkbox"> Onion skin: show the previous frame</label>
           </div>
         </details>
+         <p class="hint">Art stamps stay in this session only, up to 16 stamps and 1,000,000 cells in total. Drag a stamp to preview; release to place it.</p>
         <div class="actions">
           <button id="area-copy" type="button" disabled>Copy area</button><button id="area-cut" type="button" disabled>Cut area</button><button id="area-paste" type="button" disabled>Paste at cursor</button><button id="area-clear" type="button" disabled>Clear area</button><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button>
         </div>
@@ -134,6 +140,8 @@
           <div class="actions"><button id="apply" class="primary" type="button">Apply edits</button><button id="discard" type="button">Discard edits</button></div>
           <div class="actions"><button id="add-frame" type="button">Add blank frame</button><button id="duplicate" type="button">Duplicate frame</button><button id="delete-frame" type="button">Delete frame</button><button id="move-left" type="button">Move earlier</button><button id="move-right" type="button">Move later</button></div>
           <div class="actions"><button id="flip-horizontal" type="button">Flip columns</button><button id="flip-vertical" type="button">Flip rows</button></div>
+           <label class="check"><input id="mirror-glyphs" type="checkbox"> Mirror directional characters when flipping</label>
+           <p class="hint">Horizontal mirrors swap slash and bracket pairs. Vertical mirrors swap slashes and ^/v arrowheads; leave this off when v is text.</p>
           <p>Undo history is limited to 16 million cells. Save the project to keep all frames and timings.</p>
         </details>
       </section>

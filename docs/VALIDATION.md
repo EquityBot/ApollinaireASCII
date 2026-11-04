@@ -66,6 +66,8 @@ Screenshots were visually inspected. Clipboard permission was denied by the head
 
 The suite dispatches synthetic events, so it does not exercise the system clipboard, real pointer capture, touch hardware, the camera, video decoding, downloads, layout at other widths or screen readers. The manual checks above remain the evidence for those. The suite has not been run in Firefox or Safari.
 
+Art stamp tests capture and deduplicate selections, choose saved stamps, replace and cancel previews, place by pointer and keyboard, clip at the grid edges, choose transparent or overwriting spaces and undo or redo a placement as one step. They check the entry and aggregate cell limits, deletion without changing artwork and the empty library message. Mirror tests check that literal flips remain the default and directional mirrors are optional and undoable. Native contracts check both mirror operations twice across all 95 printable characters, retaining dimensions and significant spaces.
+
 ## Manual check limits
 
 The manual browser checks above were local session checks. Firefox, Safari, touch hardware, screen-reader behaviour and macOS binaries have not been tested. Windows emits a Cargo PDB-name collision warning because the native library and CLI share a normalised crate name; the checks still pass. The local compiler-cache wrapper could not launch one large WebAssembly compile command, so local WASM checks were rerun successfully with that wrapper disabled.

@@ -101,6 +101,8 @@ fn blank(width: usize, height: usize) {
     check("diagram", false);
     check("arrow", true);
     check("onion-skin", false);
+    check("mirror-glyphs", false);
+    check("stamp-transparent", true);
     check("border", false);
     set_value("brush", "#");
     set_value("stamp", "");
@@ -205,6 +207,178 @@ fn pencil_draws_by_pointer_and_keyboard() {
         art(),
         rows(&[" ####   ", "    #   ", "    #   ", "***     "])
     );
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamps_preview_cancel_clip_and_commit_as_one_undo_step() {
+    blank(8, 4);
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["A", " ", "B", "Enter", " ", "C", " "]);
+    let original = rows(&["A B     ", " C      ", "        ", "        "]);
+    assert_eq!(art(), original);
+    tool("area");
+    drag(&[(0, 0), (2, 1)]);
+    click("save-stamp");
+    let picker = element::<HtmlSelectElement>("art-stamp");
+    let count = picker.child_element_count();
+    click("save-stamp");
+    assert_eq!(
+        picker.child_element_count(),
+        count,
+        "same grid is not saved twice"
+    );
+    tool("stamp-art");
+    pointer("pointerdown", (3, 1));
+    assert_eq!(
+        art(),
+        rows(&["A B     ", " C A B  ", "    C   ", "        "])
+    );
+    pointer("pointermove", (5, 2));
+    let placed = rows(&["A B     ", " C      ", "     A B", "      C "]);
+    assert_eq!(art(), placed, "moving a preview leaves no trail");
+    pointer("pointercancel", (5, 2));
+    assert_eq!(art(), original);
+    drag(&[(5, 2)]);
+    assert_eq!(art(), placed);
+    click("undo");
+    assert_eq!(art(), original);
+    click("redo");
+    assert_eq!(art(), placed);
+    // A stamp survives frame and project changes, but is not part of their history.
+    blank(4, 2);
+    tool("fill");
+    drag(&[(0, 0)]);
+    tool("stamp-art");
+    cursor_to((1, 0));
+    keys(&[" ", "Enter"]);
+    assert_eq!(art(), rows(&["#A#B", "##C#"]));
+    click("undo");
+    check("stamp-transparent", false);
+    cursor_to((1, 0));
+    keys(&[" ", "Enter"]);
+    assert_eq!(art(), rows(&["#A B", "# C "]));
+    click("undo");
+    cursor_to((3, 1));
+    keys(&[" ", "Enter"]);
+    assert_eq!(
+        art(),
+        rows(&["####", "###A"]),
+        "edge placement clips safely"
+    );
+    click("undo");
+    cursor_to((0, 0));
+    keys(&[" ", "ArrowRight", "Escape"]);
+    assert_eq!(art(), rows(&["####", "####"]));
+    click("delete-stamp");
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamp_library_is_bounded_and_removal_keeps_artwork() {
+    blank(1, 1);
+    // Each test starts with no saved entries, without inspecting application state.
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    for i in 0..16u8 {
+        tool("type");
+        cursor_to((0, 0));
+        keys(&[&(char::from(b'A' + i)).to_string()]);
+        tool("area");
+        drag(&[(0, 0)]);
+        click("save-stamp");
+    }
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    tool("type");
+    cursor_to((0, 0));
+    keys(&["Z"]);
+    tool("area");
+    drag(&[(0, 0)]);
+    click("save-stamp");
+    assert!(status().contains("limited to 16"));
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    let picker = element::<HtmlSelectElement>("art-stamp");
+    picker.set_value("0");
+    picker
+        .dispatch_event(&web_sys::Event::new("change").unwrap())
+        .unwrap();
+    tool("stamp-art");
+    drag(&[(0, 0)]);
+    assert_eq!(art(), "A", "choosing an earlier stamp uses that grid");
+    click("undo");
+    tool("area");
+    drag(&[(0, 0)]);
+    click("delete-stamp");
+    assert_eq!(art(), "Z");
+    click("save-stamp");
+    assert_eq!(element::<Element>("art-stamp").child_element_count(), 16);
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    tool("stamp-art");
+    drag(&[(0, 0)]);
+    assert!(status().contains("save it as a stamp first"));
+    assert_eq!(art(), "Z");
+    assert_eq!(
+        element::<Element>("art-stamp").text_content().unwrap(),
+        "No stamps yet"
+    );
+}
+
+#[wasm_bindgen_test]
+fn saved_art_stamps_limit_total_cells_before_the_entry_limit() {
+    blank(1, 1);
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+    for i in 0..8u8 {
+        blank(512, 256);
+        tool("type");
+        drag(&[(0, 0)]);
+        keys(&[&char::from(b'A' + i).to_string()]);
+        tool("area");
+        drag(&[(0, 0), (511, 255)]);
+        click("save-stamp");
+        assert_eq!(
+            element::<Element>("art-stamp").child_element_count(),
+            usize::from((i + 1).min(7)) as u32
+        );
+    }
+    assert!(status().contains("1,000,000 cells"));
+    // A duplicate remains selectable even when a new full-size entry cannot fit.
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["A"]);
+    tool("area");
+    drag(&[(0, 0), (511, 255)]);
+    click("save-stamp");
+    assert!(status().contains("saved as a stamp"));
+    assert_eq!(element::<HtmlSelectElement>("art-stamp").value(), "0");
+    while !element::<Element>("delete-stamp").has_attribute("disabled") {
+        click("delete-stamp");
+    }
+}
+
+#[wasm_bindgen_test]
+fn directional_mirror_is_optional_and_undoable() {
+    blank(4, 2);
+    tool("type");
+    drag(&[(0, 0)]);
+    keys(&["/", "(", "<", "v", "Enter", "\\", ")", ">", "^"]);
+    let original = rows(&["/(<v", "\\)>^"]);
+    assert_eq!(art(), original);
+    click("flip-horizontal");
+    assert_eq!(art(), rows(&["v<(/", "^>)\\"]));
+    click("undo");
+    check("mirror-glyphs", true);
+    click("flip-horizontal");
+    assert_eq!(art(), rows(&["v>)\\", "^<(/"]));
+    click("undo");
+    assert_eq!(art(), original);
+    click("flip-vertical");
+    assert_eq!(art(), rows(&["/)>v", "\\(<^"]));
+    click("undo");
+    assert_eq!(art(), original);
 }
 
 #[wasm_bindgen_test]

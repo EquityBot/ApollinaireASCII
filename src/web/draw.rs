@@ -23,6 +23,7 @@ enum Tool {
     Fill,
     Type,
     Area,
+    Stamp,
 }
 impl Tool {
     fn parse(value: &str) -> Result<Self> {
@@ -35,6 +36,7 @@ impl Tool {
             "fill" => Self::Fill,
             "type" => Self::Type,
             "area" => Self::Area,
+            "stamp-art" => Self::Stamp,
             _ => return Err("Unknown drawing tool".into()),
         })
     }
@@ -62,6 +64,9 @@ impl Tool {
             Self::Area => {
                 "Select area: drag to select, drag inside to move. Keyboard: Space, arrow keys, Space; Ctrl+C, Ctrl+X, Ctrl+V and Delete."
             }
+            Self::Stamp => {
+                "Stamp art: save an area as a stamp, then choose its top-left cell. Drag to preview, release to place. Keyboard: Space, arrow keys, Space; Escape cancels."
+            }
         }
     }
 }
@@ -84,6 +89,8 @@ pub(super) struct Drawing {
     cursor: (i32, i32),
     selection: Option<Area>,
     clipboard: Option<Frame>,
+    stamps: Vec<Frame>,
+    stamp: usize,
     stroke: Option<Stroke>,
     /// Consecutive typed characters share one undo step.
     typing: bool,
@@ -210,9 +217,78 @@ impl App {
             ("area-clear", drawing.selection.is_none()),
             ("area-paste", drawing.clipboard.is_none() || !drawing_tool),
             ("stamp-text", drawing.tool != Tool::Type),
+            ("save-stamp", drawing.selection.is_none()),
+            ("art-stamp", drawing.stamps.is_empty()),
+            ("delete-stamp", drawing.stamps.is_empty()),
         ] {
             toggle(id, "disabled", disabled || self.loading || live)?;
         }
+        Ok(())
+    }
+    fn refresh_stamps(&self) -> Result<()> {
+        let picker = node::<web_sys::HtmlSelectElement>("art-stamp")?;
+        picker.set_text_content(None);
+        if self.drawing.stamps.is_empty() {
+            let option = document()
+                .create_element("option")
+                .map_err(|_| "Cannot list stamps")?;
+            option.set_text_content(Some("No stamps yet"));
+            picker
+                .append_child(&option)
+                .map_err(|_| "Cannot list stamps")?;
+        }
+        for (index, frame) in self.drawing.stamps.iter().enumerate() {
+            let option = document()
+                .create_element("option")
+                .map_err(|_| "Cannot list stamps")?;
+            option
+                .set_attribute("value", &index.to_string())
+                .map_err(|_| "Cannot list stamps")?;
+            option.set_text_content(Some(&format!(
+                "{}: {} x {}",
+                index + 1,
+                frame.width(),
+                frame.height()
+            )));
+            picker
+                .append_child(&option)
+                .map_err(|_| "Cannot list stamps")?;
+        }
+        if !self.drawing.stamps.is_empty() {
+            picker.set_value(&self.drawing.stamp.to_string());
+        }
+        Ok(())
+    }
+    fn save_stamp(&mut self) -> Result<()> {
+        self.clean()?;
+        let (x, y, width, height) = self.drawing.selection.ok_or("Select an area first.")?;
+        let stamp = self.frame().crop(x as usize, y as usize, width, height)?;
+        if let Some(index) = self.drawing.stamps.iter().position(|saved| *saved == stamp) {
+            self.drawing.stamp = index;
+        } else {
+            if self.drawing.stamps.len() >= 16
+                || self
+                    .drawing
+                    .stamps
+                    .iter()
+                    .map(|f| f.cells().len())
+                    .sum::<usize>()
+                    + stamp.cells().len()
+                    > 1_000_000
+            {
+                return Err(
+                    "Stamps are limited to 16 entries and 1,000,000 cells. Remove a stamp first."
+                        .into(),
+                );
+            }
+            self.drawing.stamp = self.drawing.stamps.len();
+            self.drawing.stamps.push(stamp);
+        }
+        self.refresh_stamps()?;
+        status(
+            "Area saved as a stamp for this session. Choose Stamp art to place it.",
+            false,
+        );
         Ok(())
     }
     fn set_frame(&mut self, frame: Frame, message: &str) -> Result<()> {
@@ -226,6 +302,9 @@ impl App {
     }
     fn begin(&mut self, point: (i32, i32), pointer: Option<i32>) -> Result<()> {
         self.clean()?;
+        if self.drawing.tool == Tool::Stamp && self.drawing.stamps.is_empty() {
+            return Err("Select an area and save it as a stamp first.".into());
+        }
         self.pause();
         self.drawing.typing = false;
         self.drawing.cursor = point;
@@ -314,6 +393,14 @@ impl App {
                 }
                 None => self.drawing.selection = Some(bounds(start, point)),
             },
+            Tool::Stamp => {
+                let stamp = self
+                    .drawing
+                    .stamps
+                    .get(self.drawing.stamp)
+                    .ok_or("Choose a saved stamp first.")?;
+                canvas.overlay(stamp, point.0, point.1, checked("stamp-transparent")?)?;
+            }
             Tool::SelectText | Tool::Fill | Tool::Type => {}
         }
         stroke.preview = canvas.finish();
@@ -602,6 +689,20 @@ fn button(id: &str) -> Result<()> {
                 app.clear_area("Area cut.")?;
             }
             "area-clear" => app.clear_area("Area cleared.")?,
+            "save-stamp" => app.save_stamp()?,
+            "delete-stamp" => {
+                app.drawing_cancel();
+                if app.drawing.stamps.is_empty() {
+                    return Err("There is no saved stamp to remove.".into());
+                }
+                app.drawing.stamps.remove(app.drawing.stamp);
+                app.drawing.stamp = app
+                    .drawing
+                    .stamp
+                    .min(app.drawing.stamps.len().saturating_sub(1));
+                app.refresh_stamps()?;
+                status("Stamp removed from this session.", false);
+            }
             "area-paste" => {
                 let contents = app
                     .drawing
@@ -688,12 +789,33 @@ pub(super) fn listen_all() -> std::result::Result<(), wasm_bindgen::JsValue> {
     for id in ["onion-skin", "diagram"] {
         listen(id, "change", move |_| report(state(|app| app.render())))?;
     }
+    listen("art-stamp", "change", move |_| {
+        report(state(|app| {
+            app.drawing_cancel();
+            let index: usize = super::select("art-stamp")?
+                .parse()
+                .map_err(|_| "Choose a saved stamp")?;
+            if index >= app.drawing.stamps.len() {
+                return Err("Choose a saved stamp".into());
+            }
+            app.drawing.stamp = index;
+            app.render()
+        }))
+    })?;
+    listen("stamp-transparent", "change", move |_| {
+        report(state(|app| {
+            app.drawing_cancel();
+            app.render()
+        }))
+    })?;
     for id in [
         "area-copy",
         "area-cut",
         "area-clear",
         "area-paste",
         "stamp-text",
+        "save-stamp",
+        "delete-stamp",
     ] {
         listen(id, "click", move |_| report(button(id)))?;
     }

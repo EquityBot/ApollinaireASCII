@@ -641,10 +641,11 @@ fn action(id: &str) -> Result<()> {
             }
             "flip-horizontal" | "flip-vertical" => {
                 let entry = &app.project.frames()[app.selected];
-                let frame = if id == "flip-horizontal" {
-                    entry.frame.flip_horizontal()
-                } else {
-                    entry.frame.flip_vertical()
+                let frame = match (id, checked("mirror-glyphs")?) {
+                    ("flip-horizontal", true) => entry.frame.mirror_horizontal(),
+                    ("flip-horizontal", false) => entry.frame.flip_horizontal(),
+                    (_, true) => entry.frame.mirror_vertical(),
+                    (_, false) => entry.frame.flip_vertical(),
                 };
                 app.update_frame(frame, entry.duration_ms)?;
             }
