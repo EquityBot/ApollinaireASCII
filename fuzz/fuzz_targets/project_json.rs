@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 #![no_main]
 //! A saved project file, which the CLI and browser editor both load.
 

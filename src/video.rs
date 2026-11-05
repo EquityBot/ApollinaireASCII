@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Sampling and timing for video and camera frames.
 //! The browser decodes media and supplies RGBA pixels; this module never sees a decoder or device.
 use crate::{

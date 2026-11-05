@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use crate::{MAX_HEIGHT, MAX_INPUT_BYTES, Result, dimensions, printable};
 
 /// A rectangular grid containing only bytes 32 through 126.

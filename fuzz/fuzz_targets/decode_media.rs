@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 #![no_main]
 //! Image and GIF bytes from a user's file or URL, through the format sniff, the
 //! in-house GIF decoder and the renderer.

@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Video files and the camera become timed text frames. Pixels are read through an
 //! offscreen canvas that is never shown or exported; only characters reach the page.
 use super::{

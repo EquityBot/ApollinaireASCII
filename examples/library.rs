@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use apollinaire_ascii::{Animation, Canvas, Result, SceneOptions, animation};
 
 fn main() -> Result<()> {

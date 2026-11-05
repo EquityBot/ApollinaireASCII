@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use crate::{Frame, Result, dimensions, printable};
 
 /// Left column, top row, width and height of the rectangle whose opposite corners are `a` and `b`.

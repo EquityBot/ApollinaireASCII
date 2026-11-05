@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Deterministic text effects that animate any frame of ASCII art or lettering.
 //!
 //! Every effect keeps the source dimensions and emits printable ASCII only. Spaces in the

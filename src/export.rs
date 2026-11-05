@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use crate::Animation;
 
 /// Portable HTML uses a small JS text player because it has no WASM dependency.

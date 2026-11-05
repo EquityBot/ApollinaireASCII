@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use crate::{
     Animation, Canvas, EffectOptions, Frame, MAX_INPUT_BYTES, RenderOptions, Result, SceneOptions,
     TimedFrame, animation, art, decode_media, effects, export, image_renderer::RAMPS, lettering,

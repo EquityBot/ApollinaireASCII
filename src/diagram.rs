@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Box-and-arrow diagrams drawn with `+ - | > < ^ v`.
 //!
 //! Strokes join where they meet: a horizontal stroke over a vertical one, or the reverse,

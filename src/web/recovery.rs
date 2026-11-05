@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! One opt-in recovery slot. Conditional writes run entirely within an IndexedDB
 //! transaction; a fresh revision also distinguishes identical artwork from another tab.
 use super::*;

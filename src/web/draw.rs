@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Drawing tools on the artwork grid. Geometry lives in `Canvas`; this module maps pointer,
 //! keyboard and clipboard events to it and keeps the overlays in step.
 

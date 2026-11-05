@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 #![cfg(feature = "cli")]
 mod common;
 use std::io::Write;
