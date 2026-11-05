@@ -13,7 +13,7 @@
 [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/EquityBot/ApollinaireASCII.svg)](https://scorecard.dev/viewer/?uri=github.com/yungSNAT/ApollinaireASCII)<br>
 [![release](https://badgen.net/github/release/yungSNAT/ApollinaireASCII/stable?label=release&color=66023C&labelColor=000000)](https://github.com/yungSNAT/ApollinaireASCII/releases/latest) [![crates.io](https://badgen.net/crates/v/apollinaire-ascii?label=crates.io&color=66023C&labelColor=000000)](https://crates.io/crates/apollinaire-ascii) [![rust: 1.99+](.github/assets/badges/rust.svg)](https://www.rust-lang.org/) [![Licence: MIT](.github/assets/badges/licence.svg)](LICENSE.md) [![Editor: in browser](.github/assets/badges/editor.svg)](https://yungsnat.github.io/ApollinaireASCII/)
 
-[What it does](#what-it-does) · [Run the CLI](#run-the-cli) · [Use the library](#use-the-library) · [Browser editor](#build-the-browser-editor) · [Alternatives](#when-to-choose-something-else) · [Licence](#foundation-and-licence)
+[What it does](#what-it-does) · [Install](#install-and-run-the-cli) · [Use the library](#use-the-library) · [Browser editor](#build-the-browser-editor) · [Alternatives](#when-to-choose-something-else) · [Development](#development) · [Credits](#credits) · [Licence](#licence)
 
 </div>
 
@@ -51,7 +51,7 @@ Every frame contains bytes 32 through 126. Line feeds separate rows when saved a
 
 All maintained application logic is Rust, including the browser's DOM controls and file handling. HTML and CSS describe the interface. A small JavaScript loader starts WebAssembly; standalone HTML exports include a small JavaScript text player so each file works on its own.
 
-## Run the CLI
+## Install and run the CLI
 
 Download the archive for your platform from [Releases](https://github.com/yungSNAT/ApollinaireASCII/releases/latest): Windows, macOS and Linux on x86-64 and ARM64, with `SHA256SUMS.txt`. Unpack it and put `apollinaire` on your `PATH`.
 
@@ -137,7 +137,18 @@ Under **Edit characters and frames**, enter the first and last frame numbers and
 
 Under **Local project recovery**, enable **Keep applied project edits in this browser** to save applied artwork and timings in IndexedDB after a short debounce. Recovery starts off on every page load; choose **Restore saved project** or **Discard saved recovery** when a saved project exists. Pausing retains the last saved project. Draft text, session stamps and undo history are excluded. Conflicting changes from another tab stop recovery and require an explicit choice. Discard removes the saved artwork and leaves only a revision marker to block stale writers. Conflicts, storage failures and a saved project found on load appear in the recovery panel and the main status line. A tab using recovery rechecks the saved record when you return to it. Browser clearing, eviction or a crash before a write completes can lose recovery data, so save JSON for a separate copy.
 
-## Checks
+## When to choose something else
+
+ApollinaireASCII keeps every output to printable ASCII and shares one Rust core between the CLI, library and browser editor. These projects suit other needs better; [the research notes](docs/RESEARCH.md) compare most of them:
+
+- Colour, ANSI, Unicode or CP437 art: [durdraw](https://github.com/durdraw/durdraw), [chafa](https://github.com/hpjansson/chafa) or [libcaca](https://github.com/cacalabs/libcaca).
+- Banner lettering alone: [FIGlet](http://www.figlet.org/), whose font format ApollinaireASCII reads.
+- Diagrams alone: [ASCIIFlow](https://github.com/lewish/asciiflow) in a browser or [ASCII Draw](https://github.com/Nokse22/ascii-draw) on the GNOME desktop.
+- Image conversion alone: [artem](https://github.com/FineFindus/artem) (Rust) or [ascii-image-converter](https://github.com/TheZoraiz/ascii-image-converter) (Go).
+- Terminal animation and effects in Python: [asciimatics](https://github.com/peterbrittain/asciimatics) or [terminaltexteffects](https://github.com/ChrisBuilds/terminaltexteffects).
+- Video playback in a terminal through FFmpeg: [tplay](https://github.com/maxcurzi/tplay).
+
+## Development
 
 ```sh
 cargo fmt --all --check
@@ -150,24 +161,17 @@ cargo test-editor
 
 The integration tests cover the ASCII contract, whitespace, drawing, all bundled styles, scenes, effects and catalogue pieces, timing, round trips, malformed fonts, GIF preflight checks, video and camera frame sampling and timing, resource limits, script-safe HTML, CLI file handling and batch output, and URL limits against a local test server. `cargo test-editor` runs the editor tests in `src/web/tests.rs` in a headless browser. They embed the page markup and stylesheet, start the editor and drive it through pointer, keyboard, clipboard and form events: each drawing tool by pointer and by keyboard, diagram joins, onion skin, undo and redo, file opening, frame editing, effects and catalogue search, with every read of the artwork checked as printable ASCII. They need `wasm-bindgen-test-runner` from the pinned `wasm-bindgen-cli` 0.2.130 and `CHROMEDRIVER` set to a chromedriver matching an installed Chrome or Chromium. CI runs the native checks on Linux and Windows, runs the editor tests in headless Chrome on Linux and builds the browser module. See [validation](docs/VALIDATION.md) for the browser checks and known limits.
 
-## When to choose something else
-
-ApollinaireASCII keeps every output to printable ASCII and shares one Rust core between the CLI, library and browser editor. These projects suit other needs better; [the research notes](docs/RESEARCH.md) compare most of them:
-
-- Colour, ANSI, Unicode or CP437 art: [durdraw](https://github.com/durdraw/durdraw), [chafa](https://github.com/hpjansson/chafa) or [libcaca](https://github.com/cacalabs/libcaca).
-- Banner lettering alone: [FIGlet](http://www.figlet.org/), whose font format ApollinaireASCII reads.
-- Diagrams alone: [ASCIIFlow](https://github.com/lewish/asciiflow) in a browser or [ASCII Draw](https://github.com/Nokse22/ascii-draw) on the GNOME desktop.
-- Image conversion alone: [artem](https://github.com/FineFindus/artem) (Rust) or [ascii-image-converter](https://github.com/TheZoraiz/ascii-image-converter) (Go).
-- Terminal animation and effects in Python: [asciimatics](https://github.com/peterbrittain/asciimatics) or [terminaltexteffects](https://github.com/ChrisBuilds/terminaltexteffects).
-- Video playback in a terminal through FFmpeg: [tplay](https://github.com/maxcurzi/tplay).
-
-## Foundation and licence
+## Credits
 
 ApollinaireASCII retains the history of [orhnk/RASCII](https://github.com/orhnk/RASCII), starting at `8d33a3670e51298d530ab202090b212501310cdd`. Its MIT image-conversion approach is the foundation of the converter. The shared frame model, drawing, scenes, project format, editor and exporters are new Rust code.
 
 [Research](docs/RESEARCH.md) records 1,164 discovered repositories across 27 multilingual searches, the shortlist and why this foundation was selected. Discovery metadata is not a source audit of every result. No Ghostty animation artwork was copied.
 
-MIT for this repository's code. Preserve the [licence](LICENSE.md) and [third-party notices](THIRD_PARTY_NOTICES.md). Dependencies and bundled font data retain their own licences and notices. The banner's lettering and emblem are drawn from Cascadia Mono and Besley glyphs (SIL OFL 1.1).
+The banner's lettering and emblem are drawn from Cascadia Mono and Besley glyphs (SIL OFL 1.1).
+
+## Licence
+
+MIT for this repository's code. Preserve the [licence](LICENSE.md) and [third-party notices](THIRD_PARTY_NOTICES.md). Dependencies and bundled font data retain their own licences and notices.
 
 ---
 
