@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use std::collections::BTreeSet;
 
 const RULE: &str = "============================================================";

@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 #![no_main]
 //! A user's FLF or TLF font file: parsed, and when valid, used to render text.
 

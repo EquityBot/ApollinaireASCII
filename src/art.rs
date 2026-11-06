@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! A catalogue of original ASCII artwork, grouped by category and searchable by tag.
 //!
 //! Every piece was drawn for this repository; no artwork from other projects is copied.

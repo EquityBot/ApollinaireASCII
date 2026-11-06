@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use apollinaire_ascii::{
     Animation, Canvas, EffectOptions, Frame, MAX_FRAMES, RenderOptions, SceneOptions, TimedFrame,
     animation, art, decode_media, effects, export, lettering, render_image,

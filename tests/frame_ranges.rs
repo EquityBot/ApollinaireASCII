@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use apollinaire_ascii::{Animation, Frame, MAX_FRAMES, TimedFrame};
 
 fn project() -> Animation {

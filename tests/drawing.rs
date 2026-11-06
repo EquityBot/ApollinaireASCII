@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use apollinaire_ascii::{Canvas, Frame, canvas::bounds};
 
 fn canvas(text: &str) -> Canvas {

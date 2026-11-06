@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Headless-browser tests of the editor. The body of `web/index.html` and `web/style.css` are
 //! embedded once and the editor started; tests then drive the page only through DOM events and
 //! controls. Run them with `cargo test-editor` (see `.cargo/config.toml`).

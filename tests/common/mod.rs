@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! A minimal GIF writer for building test inputs.
 
 /// One image in a test GIF. `indices` are in screen row order.

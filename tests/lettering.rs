@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! Fixtures in `tests/fixtures/lettering` are reference output from the bundled fonts:
 //! horizontal layout, wrap and right-to-left from figlet 2.2.5 (cmatsuoka/figlet `202a0a8`,
 //! `figlet -l` with `-W`, `-k`, `-S` or `-s`; wrap width `w` is `-w w+1`), vertical layout from

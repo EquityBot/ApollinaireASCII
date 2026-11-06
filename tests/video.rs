@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 use apollinaire_ascii::{
     Animation, MAX_FRAMES, RenderOptions, TimedFrame,
     video::{capture_due, check_capture, frame_durations, render_rgba, sample_size, sample_times},

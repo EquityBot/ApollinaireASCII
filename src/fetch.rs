@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! HTTPS image download for the CLI binary. The library and browser never use the network.
 
 use apollinaire_ascii::{MAX_INPUT_BYTES, Result};

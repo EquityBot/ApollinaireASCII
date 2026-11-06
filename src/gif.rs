@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: MIT
+
 //! GIF decoding into composited RGBA frames, using weezl 0.2 for LZW.
 //!
 //! Released `gif` crates still use weezl 0.1 (see docs/DEPENDENCIES.md), so this module
